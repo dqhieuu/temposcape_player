@@ -1,4 +1,4 @@
-const appName = 'Meguplayer';
+const appName = 'Temposcape';
 
 const String lastFmApiKey = 'f555492ef2705191fb857a774d5714e7';
 

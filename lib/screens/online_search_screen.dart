@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_search_bar/flutter_search_bar.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:provider/provider.dart';
 import 'package:temposcape_player/plugins/player_plugins.dart';
+import 'package:temposcape_player/screens/main_player_screen.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
@@ -51,22 +57,30 @@ class OnlineSongListTile extends StatelessWidget {
 }
 
 class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
-  SearchBar searchBar;
+  SearchBar _searchBar;
 
-  List<NetworkSong> list = [];
+  List<NetworkSong> _list = [];
+
+  Timer _debounce;
+
+  var zing = ZingMp3Plugin();
 
   AppBar buildAppBar(BuildContext context) {
     return new AppBar(
-        title: new Text('Zingmp3test'),
-        actions: [searchBar.getSearchAction(context)]);
+        title: Text('Zingmp3 test'),
+        flexibleSpace: FlexibleSpaceBar(),
+        actions: [_searchBar.getSearchAction(context)]);
   }
 
   _OnlineSearchScreenState() {
-    searchBar = new SearchBar(
+    _searchBar = new SearchBar(
         inBar: false,
         setState: setState,
         onChanged: (value) {
-          print(value);
+          if (_debounce?.isActive ?? false) _debounce.cancel();
+          _debounce = Timer(const Duration(milliseconds: 200), () async {
+            updateList(await zing.searchSong(value));
+          });
         },
         onSubmitted: (String value) async {
           var zing = ZingMp3Plugin();
@@ -77,20 +91,44 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
 
   void updateList(List<NetworkSong> newList) {
     setState(() {
-      list = newList;
+      _list = newList;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: searchBar.build(context),
-      body: ListView(
-        children: list
-                ?.map((NetworkSong song) => OnlineSongListTile(song: song))
-                ?.toList() ??
-            [],
+    return Consumer<AudioPlayer>(
+      builder: (_, player, __) => Scaffold(
+        appBar: _searchBar.build(context),
+        body: ListView(
+          children: _list
+                  ?.map((NetworkSong song) => OnlineSongListTile(
+                        song: song,
+                        onTap: () async {
+                          await player.setAudioSource(ProgressiveAudioSource(
+                              Uri.parse(await song.songUrl()),
+                              tag: SongInfo(
+                                  artist: song.artist,
+                                  title: song.title,
+                                  isPodcast: true,
+                                  albumArtwork: song.albumArtUrl)));
+                          player.play();
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => MainPlayerScreen()));
+                        },
+                      ))
+                  ?.toList() ??
+              [],
+        ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }

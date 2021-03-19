@@ -13,7 +13,6 @@ import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:scrobblenaut/lastfm.dart' as lastFm;
 import 'package:scrobblenaut/scrobblenaut.dart' as scrobblenaut;
-import 'package:temposcape_player/models/models.dart';
 import 'package:temposcape_player/screens/online_search_screen.dart';
 import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
@@ -194,9 +193,7 @@ class _HomeScreenState extends State<HomeScreen>
                                             .contains(r'/Android/media/'))
                                         ?.toList()
                                         ?.map((SongInfo song) => SongListTile(
-                                              song:
-                                                  MutableSongInfo.fromSongInfo(
-                                                      song),
+                                              song: song,
                                               onTap: () async {
                                                 // TODO: optimize this
                                                 // await player.setAudioSource(
@@ -217,10 +214,8 @@ class _HomeScreenState extends State<HomeScreen>
                                                           MainPlayerScreen()),
                                                 );
                                               },
-                                              selected: (snapshot
-                                                          .data
-                                                          ?.currentSource
-                                                          ?.tag as SongInfo)
+                                              selected: (snapshot.data
+                                                          ?.currentSource?.tag)
                                                       ?.filePath ==
                                                   song.filePath,
                                             ))
@@ -471,15 +466,19 @@ class MiniPlayer extends StatelessWidget {
               return StreamBuilder<SequenceState>(
                   stream: player.sequenceStateStream,
                   builder: (context, snapshot) {
-                    final SongInfo song = snapshot.data?.currentSource?.tag;
+                    final song = snapshot.data?.currentSource?.tag;
                     return Row(
                       children: [
                         AspectRatio(
                           aspectRatio: 1,
                           child: RoundedImage(
-                            image: song?.albumArtwork != null
-                                ? Image.file(File(song?.albumArtwork)).image
-                                : AssetImage(Constants.defaultImagePath),
+                            image: song?.isPodcast ?? false
+                                ? (song?.albumArtwork != null
+                                    ? Image.network(song?.albumArtwork).image
+                                    : AssetImage(Constants.defaultImagePath))
+                                : (song?.albumArtwork != null
+                                    ? Image.file(File(song?.albumArtwork)).image
+                                    : AssetImage(Constants.defaultImagePath)),
                           ),
                         ),
                         VerticalDivider(
@@ -540,7 +539,7 @@ class MiniPlayer extends StatelessWidget {
 }
 
 class SongListTile extends StatelessWidget {
-  final MutableSongInfo song;
+  final SongInfo song;
   final GestureTapCallback onTap;
   final bool selected;
 

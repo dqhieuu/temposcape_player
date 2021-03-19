@@ -9,7 +9,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:temposcape_player/models/models.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
@@ -35,8 +34,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                 StreamBuilder<SequenceState>(
                     stream: player.sequenceStateStream,
                     builder: (context, snapshot) {
-                      return PlayerSongInfo(MutableSongInfo.fromSongInfo(
-                          snapshot.data?.currentSource?.tag as SongInfo));
+                      return PlayerSongInfo(snapshot.data?.currentSource?.tag);
                     }),
                 StreamBuilder<Duration>(
                     stream: player.durationStream,
@@ -64,7 +62,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
 }
 
 class PlayerSongInfo extends StatelessWidget {
-  final MutableSongInfo song;
+  final SongInfo song;
 
   const PlayerSongInfo(
     this.song, {
@@ -73,12 +71,17 @@ class PlayerSongInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(song?.isPodcast);
     return Column(
       children: [
         RoundedImage(
-          image: song?.albumArtwork != null
-              ? Image.file(File(song?.albumArtwork)).image
-              : AssetImage(Constants.defaultImagePath),
+          image: song?.isPodcast ?? false
+              ? (song?.albumArtwork != null
+                  ? Image.network(song?.albumArtwork).image
+                  : AssetImage(Constants.defaultImagePath))
+              : (song?.albumArtwork != null
+                  ? Image.file(File(song?.albumArtwork)).image
+                  : AssetImage(Constants.defaultImagePath)),
           width: 250,
           height: 250,
         ),

@@ -12,12 +12,15 @@ class NetworkSong {
   String albumThumbnailUrl;
   String title;
   String artist;
-  NetworkSong(
-      {this.id,
-      this.albumArtUrl,
-      this.title,
-      this.artist,
-      this.albumThumbnailUrl});
+  Future<String> Function() songUrl;
+  NetworkSong({
+    this.id,
+    this.albumArtUrl,
+    this.title,
+    this.artist,
+    this.albumThumbnailUrl,
+    this.songUrl,
+  });
 }
 
 abstract class BasePlayerPlugin {
@@ -38,7 +41,7 @@ abstract class BasePlayerPlugin {
 
   Widget buildSettingsMenu();
   Future<List<NetworkSong>> searchSong(String song, {int page});
-  Future<String> getSongUrl(NetworkSong song);
+  Future<String> getSongUrl(String songId);
 }
 
 // var response = await http.get(
@@ -52,9 +55,7 @@ abstract class BasePlayerPlugin {
 class ZingMp3Plugin extends BasePlayerPlugin {
   static const sha512SecretKey = r'882QcNXV4tUZbvAsjmFOHqNC1LpcBRKW';
   static const zingMp3ApiKey = r'kI44ARvPwaqL7v0KuDSM0rGORtdY1nnw';
-  static const cookieRqid =
-      r'MHwxODMdUngODAdUngMjMxLjY3fHYxLjEdUngMXwxNjE2MDkyMTg2NDQw';
-  static const version = '1.1.1';
+  static const version = '1.1.3';
 
   ZingMp3Plugin()
       : super(
@@ -74,17 +75,10 @@ class ZingMp3Plugin extends BasePlayerPlugin {
     // TODO: implement a cookie date parser
   }
 
-  Future<String> _getNewCookie() async {
-    final response = await http.get(Uri.https('zingmp3.vn', ''));
-    final cookie = response.headers[HttpHeaders.setCookieHeader];
-
-    return cookie;
-  }
-
   Future<String> _renewCookie() async {
     final response = await http.get(Uri.https('zingmp3.vn', ''));
     final newCookie = response.headers[HttpHeaders.setCookieHeader];
-
+    Hive.box('pluginZingMp3').clear();
     if (newCookie != null) {
       putValueToDatabase<String>('cookie', newCookie);
     }
@@ -106,15 +100,6 @@ class ZingMp3Plugin extends BasePlayerPlugin {
   }
 
   String _getSongSignature(String songId) {
-    var info1 = [
-      '/api/v2/song/getStreaming',
-      '/api/v2/search',
-    ];
-    var info2 = [
-      'ctime=1616043492id=ZW9C67BIversion=1.1.1',
-      'count=18ctime=1616043493page=1type=songversion=1.1.1',
-    ];
-
     final infoLeft = '/api/v2/song/getStreaming';
     final infoRight = sha256
         .convert(utf8.encode('ctime=${ctime}id=${songId}version=$version'))
@@ -146,14 +131,17 @@ class ZingMp3Plugin extends BasePlayerPlugin {
     final result = json.decode(response.body);
     var songList = <NetworkSong>[];
     if (result['msg'] == 'Success') {
-      (result['data']['items'] as List).forEach((e) {
+      (result['data']['items'] as List)
+          .where((e) => e['streamingStatus'] as int != 2)
+          .forEach((e) {
         songList.add(
           NetworkSong(
-            id: e['encodeId'],
-            title: e['title'],
-            artist: e['artistsNames'],
-            albumThumbnailUrl: e['thumbnail'],
-          ),
+              id: e['encodeId'],
+              title: e['title'],
+              artist: e['artistsNames'],
+              albumThumbnailUrl: e['thumbnail'],
+              albumArtUrl: e['thumbnailM'] ?? e['thumbnail'],
+              songUrl: () => getSongUrl(e['encodeId'] as String)),
         );
       });
     }
@@ -167,8 +155,25 @@ class ZingMp3Plugin extends BasePlayerPlugin {
   }
 
   @override
-  Future<String> getSongUrl(NetworkSong song) {
-    // TODO: implement getSong
-    throw UnimplementedError();
+  Future<String> getSongUrl(String songId) async {
+    final cookie = await _renewCookie();
+
+    final response = await http.get(
+        Uri.https('zingmp3.vn', 'api/v2/song/getStreaming', {
+          'id': songId,
+          'ctime': ctime,
+          'version': version,
+          'sig': _getSongSignature(songId),
+          'apiKey': zingMp3ApiKey,
+        }),
+        headers: {
+          'Cookie': RegExp(r'zmp3_rqid=(\w+)').firstMatch(cookie).group(0),
+        });
+
+    final songUrlList = (json.decode(response.body)['data']
+        as Map<String, dynamic>)
+      ..removeWhere((key, value) => !value.startsWith('http'));
+    // Last value usually is of best quality.
+    return songUrlList.values.toList().last;
   }
 }
