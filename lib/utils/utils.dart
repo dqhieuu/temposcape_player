@@ -1,6 +1,20 @@
+/// A discrete value that's a text representation of a duration.
+///
+/// It separates a duration into a component time quantity,
+/// in which there's a most significant unit.
+///
+/// Syntax: `[optional|0|{none}]Unit`. Where:
+///
+/// * optional: quantity of unit isn't displayed if quantity = 0
+/// * {none}: quantity of unit is displayed as 0 if quantity = 0, otherwise {quantity}
+/// * 0 : pads an additional zero if quantity < 10
 enum TimeFormat { optionalHours0Minutes0Seconds, optionalHoursMinutes0Seconds }
 
-String getFormattedDuration(Duration duration, {TimeFormat timeFormat}) {
+/// Display a duration as time intervals, separated by a colon.
+///
+/// `timeFormat`: the format of duration to be displayed
+String getFormattedDuration(Duration duration,
+    {TimeFormat timeFormat = TimeFormat.optionalHoursMinutes0Seconds}) {
   String hours = '';
   String minutes = '';
   String seconds = '';
