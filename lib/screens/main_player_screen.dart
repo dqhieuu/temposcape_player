@@ -3,12 +3,15 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:temposcape_player/screens/song_queue_screen.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
@@ -20,43 +23,84 @@ class MainPlayerScreen extends StatefulWidget {
 }
 
 class _MainPlayerScreenState extends State<MainPlayerScreen> {
+  static const platform = const MethodChannel('temposcape.flutter/refresh');
+
+  Future<void> _refreshMediaStore(String path) async {
+    try {
+      final String result =
+          await platform.invokeMethod('refreshMediaStore', {'path': path});
+      print(result);
+    } on PlatformException catch (e) {
+      print(e.message);
+    }
+  }
+
+  void _downloadMusicToPhone(String url, String title) async {
+    if (url == null || !url.startsWith('http')) return;
+    print(url);
+    final file = File(
+        '/storage/emulated/0/Music/downloaded_${title?.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '-') ?? ''}_${DateTime.now().millisecondsSinceEpoch}.mp3');
+    file.writeAsBytesSync((await http.get(url)).bodyBytes);
+    await _refreshMediaStore(file.path);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<AudioPlayer>(
-      builder: (_, player, __) => Scaffold(
-        appBar: AppBar(
-          title: Text('Main player'),
-        ),
-        body: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                StreamBuilder<SequenceState>(
-                    stream: player.sequenceStateStream,
-                    builder: (context, snapshot) {
-                      return PlayerSongInfo(snapshot.data?.currentSource?.tag);
-                    }),
-                StreamBuilder<Duration>(
-                    stream: player.durationStream,
-                    builder: (context, snapshot) {
-                      final duration = snapshot.data ?? Duration.zero;
-                      return StreamBuilder<Duration>(
-                          stream: player.positionStream,
-                          builder: (context, snapshot) {
-                            final position = snapshot.data ?? Duration.zero;
-                            return PlayerSeekBar(
-                              duration: duration,
-                              position: position,
-                              onChangeEnd: (value) {
-                                player.seek(value);
-                              },
-                            );
-                          });
-                    }),
-                PlayerControlBar(player),
-              ],
-            )),
+    final player = context.read<AudioPlayer>();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Main player'),
       ),
+      body: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              StreamBuilder<SequenceState>(
+                  stream: player.sequenceStateStream,
+                  builder: (context, snapshot) {
+                    return PlayerSongInfo(snapshot.data?.currentSource?.tag);
+                  }),
+              StreamBuilder<Duration>(
+                  stream: player.durationStream,
+                  builder: (context, snapshot) {
+                    final duration = snapshot.data ?? Duration.zero;
+                    return StreamBuilder<Duration>(
+                        stream: player.positionStream,
+                        builder: (context, snapshot) {
+                          final position = snapshot.data ?? Duration.zero;
+                          return PlayerSeekBar(
+                            duration: duration,
+                            position: position,
+                            onChangeEnd: (value) {
+                              player.seek(value);
+                            },
+                          );
+                        });
+                  }),
+              PlayerControlBar(player),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  IconButton(
+                      icon: Icon(Icons.download_rounded),
+                      onPressed: () async {
+                        final songInfo = (player
+                            ?.sequenceState?.currentSource?.tag as SongInfo);
+                        _downloadMusicToPhone(
+                            songInfo?.filePath, songInfo?.title);
+                      }),
+                  IconButton(
+                      icon: Icon(Icons.queue_music),
+                      onPressed: () async {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SongQueueScreen()));
+                      }),
+                ],
+              ),
+            ],
+          )),
     );
   }
 }
@@ -71,7 +115,6 @@ class PlayerSongInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(song?.isPodcast);
     return Column(
       children: [
         RoundedImage(
@@ -190,7 +233,12 @@ class PlayerControlBar extends StatelessWidget {
                 },
               );
             }),
-        Icon(FontAwesomeIcons.backward),
+        IconButton(
+          onPressed: () {
+            player.seekToPrevious();
+          },
+          icon: Icon(FontAwesomeIcons.backward),
+        ),
         StreamBuilder<PlayerState>(
             stream: player.playerStateStream,
             builder: (context, snapshot) {
@@ -209,7 +257,12 @@ class PlayerControlBar extends StatelessWidget {
                 icon: Icon(FontAwesomeIcons.play),
               );
             }),
-        Icon(FontAwesomeIcons.forward),
+        IconButton(
+          onPressed: () {
+            player.seekToNext();
+          },
+          icon: Icon(FontAwesomeIcons.forward),
+        ),
         StreamBuilder<LoopMode>(
             stream: player.loopModeStream,
             builder: (context, snapshot) {

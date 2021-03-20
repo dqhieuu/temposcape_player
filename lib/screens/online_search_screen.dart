@@ -19,7 +19,7 @@ class OnlineSearchScreen extends StatefulWidget {
 }
 
 class OnlineSongListTile extends StatelessWidget {
-  final NetworkSong song;
+  final OnlineSong song;
   final GestureTapCallback onTap;
   final bool selected;
 
@@ -59,7 +59,7 @@ class OnlineSongListTile extends StatelessWidget {
 class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   SearchBar _searchBar;
 
-  List<NetworkSong> _list = [];
+  List<OnlineSong> _list = [];
 
   Timer _debounce;
 
@@ -89,7 +89,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
         buildDefaultAppBar: buildAppBar);
   }
 
-  void updateList(List<NetworkSong> newList) {
+  void updateList(List<OnlineSong> newList) {
     setState(() {
       _list = newList;
     });
@@ -102,15 +102,17 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
         appBar: _searchBar.build(context),
         body: ListView(
           children: _list
-                  ?.map((NetworkSong song) => OnlineSongListTile(
+                  ?.map((OnlineSong song) => OnlineSongListTile(
                         song: song,
                         onTap: () async {
+                          final songUrl = await song.songUrl();
                           await player.setAudioSource(ProgressiveAudioSource(
-                              Uri.parse(await song.songUrl()),
+                              Uri.parse(songUrl),
                               tag: SongInfo(
                                   artist: song.artist,
                                   title: song.title,
                                   isPodcast: true,
+                                  filePath: songUrl,
                                   albumArtwork: song.albumArtUrl)));
                           player.play();
                           Navigator.push(

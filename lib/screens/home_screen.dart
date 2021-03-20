@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:scrobblenaut/lastfm.dart' as lastFm;
 import 'package:scrobblenaut/scrobblenaut.dart' as scrobblenaut;
 import 'package:temposcape_player/screens/online_search_screen.dart';
+import 'package:temposcape_player/screens/song_queue_screen.dart';
 import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
@@ -134,267 +135,136 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AudioPlayer>(
-      builder: (_, player, __) => Scaffold(
-        appBar: _searchBar.build(context),
-        resizeToAvoidBottomInset: false,
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              DrawerHeader(
-                child: Text(Constants.appName),
-              ),
-              ListTile(
-                title: Text('Home'),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                title: Text('Online search'),
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => OnlineSearchScreen()));
-                },
-              ),
-              ListTile(
-                title: Text('Settings'),
-                onTap: () {
-                  // TODO: implement this
-                },
-              ),
-            ],
-          ),
+    final player = context.read<AudioPlayer>();
+    return Scaffold(
+      appBar: _searchBar.build(context),
+      resizeToAvoidBottomInset: false,
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Text(Constants.appName),
+            ),
+            ListTile(
+              title: Text('Home'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('Online search'),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => OnlineSearchScreen()));
+              },
+            ),
+            ListTile(
+              title: Text('Queue'),
+              onTap: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => SongQueueScreen()));
+              },
+            ),
+            ListTile(
+              title: Text('Settings'),
+              onTap: () {
+                // TODO: implement this
+              },
+            ),
+          ],
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: TabBarView(controller: _tabController, children: [
-                Consumer<AudioPlayer>(
-                  builder: (_, player, __) => FutureBuilder<List<SongInfo>>(
-                      future: audioQuery.getSongs(),
-                      builder: (context, snapshot) {
-                        final songs =
-                            searchResult as List<SongInfo> ?? snapshot.data;
-                        return StreamBuilder<SequenceState>(
-                            stream: player.sequenceStateStream,
-                            builder: (context, snapshot) {
-                              final audioSource = songs
-                                  ?.map((e) => AudioSource.uri(
-                                      Uri.file(e.filePath),
-                                      tag: e))
-                                  ?.toList();
-                              return ListView(
-                                children: songs
-                                        ?.where((song) => !song.filePath
-                                            .contains(r'/Android/media/'))
-                                        ?.toList()
-                                        ?.map((SongInfo song) => SongListTile(
-                                              song: song,
-                                              onTap: () async {
-                                                // TODO: optimize this
-                                                // await player.setAudioSource(
-                                                //     ProgressiveAudioSource(
-                                                //         Uri.file(song.filePath),
-                                                //         tag: song));
-                                                // player.play();
-                                                await player.setAudioSource(
-                                                    ConcatenatingAudioSource(
-                                                        children: audioSource));
-                                                await player.seek(Duration.zero,
-                                                    index: songs.indexOf(song));
-                                                player.play();
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          MainPlayerScreen()),
-                                                );
-                                              },
-                                              selected: (snapshot.data
-                                                          ?.currentSource?.tag)
-                                                      ?.filePath ==
-                                                  song.filePath,
-                                            ))
-                                        ?.toList() ??
-                                    [],
-                              );
-                            });
-                      }),
-                ),
-                FutureBuilder<List<AlbumInfo>>(
-                    future: audioQuery.getAlbums(),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: TabBarView(controller: _tabController, children: [
+              Consumer<AudioPlayer>(
+                builder: (_, player, __) => FutureBuilder<List<SongInfo>>(
+                    future: audioQuery.getSongs(),
                     builder: (context, snapshot) {
-                      final albums =
-                          searchResult as List<AlbumInfo> ?? snapshot.data;
+                      final allSongsWithoutSystemMusic = snapshot.data
+                          ?.where((song) =>
+                              !song.filePath.contains(r'/Android/media/'))
+                          ?.toList();
+                      final songs = searchResult as List<SongInfo> ??
+                          allSongsWithoutSystemMusic;
                       return StreamBuilder<SequenceState>(
                           stream: player.sequenceStateStream,
                           builder: (context, snapshot) {
-                            return OrientationBuilder(
-                                builder: (context, orientation) {
-                              return GridView.count(
-                                crossAxisCount:
-                                    orientation == Orientation.portrait ? 3 : 5,
-                                crossAxisSpacing: 5,
-                                mainAxisSpacing: 5,
-                                childAspectRatio: 0.75,
-                                children: albums?.map((AlbumInfo album) {
-                                      return MyGridTile(
-                                        child: Column(
-                                          children: [
-                                            album?.albumArt != null
-                                                ? Image.file(
-                                                    File(album.albumArt))
-                                                : Image(
-                                                    image: AssetImage(Constants
-                                                        .defaultImagePath),
-                                                  ),
-                                            Text(
-                                              album.title,
-                                              textAlign: TextAlign.center,
-                                              maxLines: 2,
-                                            )
-                                          ],
-                                        ),
-                                      );
-                                    })?.toList() ??
-                                    [],
-                              );
-                            });
-                          });
-                    }),
-                FutureBuilder<List<ArtistInfo>>(
-                    future: audioQuery.getArtists(),
-                    builder: (context, snapshot) {
-                      final artists =
-                          searchResult as List<ArtistInfo> ?? snapshot.data;
-                      return StreamBuilder<SequenceState>(
-                          stream: player.sequenceStateStream,
-                          builder: (context, snapshot) {
-                            return GridView.count(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 5,
-                              mainAxisSpacing: 5,
-                              childAspectRatio: 0.55,
-                              children: artists?.map((ArtistInfo artist) {
-                                    var dbArtistArtUrl = Hive.box<String>(
-                                            Constants.cachedArtists)
-                                        .get(
-                                      base64.encode(utf8.encode(artist.name)),
-                                    );
-                                    return FutureBuilder<lastFm.Artist>(
-                                      future: dbArtistArtUrl == null
-                                          ? scrobblenaut
-                                              .Scrobblenaut.instance.artist
-                                              .getInfo(artist: artist.name)
-                                          : null,
-                                      builder: (context, snapshot) {
-                                        final lastFmArtistArtUrl =
-                                            snapshot.data?.images?.last?.text;
-                                        if (dbArtistArtUrl == null) {
-                                          dbArtistArtUrl =
-                                              lastFmArtistArtUrl ?? '';
-                                          Hive.box<String>(
-                                                  Constants.cachedArtists)
-                                              .put(
-                                                  base64.encode(
-                                                      utf8.encode(artist.name)),
-                                                  dbArtistArtUrl);
-                                        }
-                                        return MyGridTile(
-                                          child: Column(children: [
-                                            AspectRatio(
-                                              aspectRatio: 0.7,
-                                              child: dbArtistArtUrl?.isNotEmpty
-                                                  ? CachedNetworkImage(
-                                                      imageUrl: dbArtistArtUrl,
-                                                      placeholder: (context,
-                                                              url) =>
-                                                          CircularProgressIndicator(),
-                                                      errorWidget: (context,
-                                                              url, error) =>
-                                                          Icon(Icons.error),
-                                                      fit: BoxFit.cover,
-                                                    )
-                                                  : artist?.artistArtPath !=
-                                                          null
-                                                      ? Image.file(
-                                                          File(artist
-                                                              .artistArtPath),
-                                                          fit: BoxFit.cover,
-                                                        )
-                                                      : Image(
-                                                          image: AssetImage(
-                                                              Constants
-                                                                  .defaultImagePath),
-                                                          fit: BoxFit.cover,
-                                                        ),
-                                            ),
-                                            Text(
-                                              artist.name,
-                                              textAlign: TextAlign.center,
-                                              maxLines: 2,
-                                            ),
-                                          ]),
-                                        );
-                                      },
-                                    );
-                                  })?.toList() ??
+                            final audioSource = songs
+                                ?.map((e) => AudioSource.uri(
+                                    Uri.file(e.filePath),
+                                    tag: e))
+                                ?.toList();
+                            return ListView(
+                              children: songs
+                                      ?.toList()
+                                      ?.map((SongInfo song) => SongListTile(
+                                            song: song,
+                                            onTap: () async {
+                                              // TODO: optimize this
+                                              // await player.setAudioSource(
+                                              //     ProgressiveAudioSource(
+                                              //         Uri.file(song.filePath),
+                                              //         tag: song));
+                                              // player.play();
+                                              await player.setAudioSource(
+                                                  ConcatenatingAudioSource(
+                                                      children: audioSource));
+                                              await player.seek(Duration.zero,
+                                                  index: songs.indexOf(song));
+                                              player.play();
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        MainPlayerScreen()),
+                                              );
+                                            },
+                                            selected: (snapshot.data
+                                                        ?.currentSource?.tag)
+                                                    ?.filePath ==
+                                                song.filePath,
+                                          ))
+                                      ?.toList() ??
                                   [],
                             );
                           });
                     }),
-                // TODO: implement this
-                Icon(Icons.directions_transit),
-                // TODO: implement this
-                Icon(Icons.directions_bike),
-                FutureBuilder<List<GenreInfo>>(
-                    future: audioQuery.getGenres(),
-                    builder: (context, snapshot) {
-                      final genres =
-                          searchResult as List<GenreInfo> ?? snapshot.data;
-                      final random = Random();
-                      return StreamBuilder<SequenceState>(
-                          stream: player.sequenceStateStream,
-                          builder: (context, snapshot) {
+              ),
+              FutureBuilder<List<AlbumInfo>>(
+                  future: audioQuery.getAlbums(),
+                  builder: (context, snapshot) {
+                    final albums =
+                        searchResult as List<AlbumInfo> ?? snapshot.data;
+                    return StreamBuilder<SequenceState>(
+                        stream: player.sequenceStateStream,
+                        builder: (context, snapshot) {
+                          return OrientationBuilder(
+                              builder: (context, orientation) {
                             return GridView.count(
-                              crossAxisCount: 3,
+                              crossAxisCount:
+                                  orientation == Orientation.portrait ? 3 : 5,
                               crossAxisSpacing: 5,
                               mainAxisSpacing: 5,
-                              childAspectRatio: 1.3,
-                              children: genres?.map((GenreInfo genre) {
-                                    var genreImagePath =
-                                        Hive.box<String>(Constants.cachedGenres)
-                                            .get(
-                                      base64.encode(utf8.encode(genre.name)),
-                                    );
-                                    if (genreImagePath == null) {
-                                      genreImagePath =
-                                          Constants.genreImagePaths[
-                                              random.nextInt(Constants
-                                                  .genreImagePaths.length)];
-                                      Hive.box<String>(Constants.cachedGenres)
-                                          .put(
-                                              base64.encode(
-                                                  utf8.encode(genre.name)),
-                                              genreImagePath);
-                                    }
+                              childAspectRatio: 0.75,
+                              children: albums?.map((AlbumInfo album) {
                                     return MyGridTile(
                                       child: Column(
                                         children: [
-                                          AspectRatio(
-                                            aspectRatio: 1.7,
-                                            child: Image(
-                                              image: AssetImage(genreImagePath),
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
+                                          album?.albumArt != null
+                                              ? Image.file(File(album.albumArt))
+                                              : Image(
+                                                  image: AssetImage(Constants
+                                                      .defaultImagePath),
+                                                ),
                                           Text(
-                                            genre.name,
-                                            maxLines: 1,
+                                            album.title,
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
                                           )
                                         ],
                                       ),
@@ -403,20 +273,155 @@ class _HomeScreenState extends State<HomeScreen>
                                   [],
                             );
                           });
-                    }),
-              ]),
-            ),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MainPlayerScreen()),
-                );
-              },
-              child: MiniPlayer(player: player),
-            ),
-          ],
-        ),
+                        });
+                  }),
+              FutureBuilder<List<ArtistInfo>>(
+                  future: audioQuery.getArtists(),
+                  builder: (context, snapshot) {
+                    final artists =
+                        searchResult as List<ArtistInfo> ?? snapshot.data;
+                    return StreamBuilder<SequenceState>(
+                        stream: player.sequenceStateStream,
+                        builder: (context, snapshot) {
+                          return GridView.count(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 5,
+                            mainAxisSpacing: 5,
+                            childAspectRatio: 0.55,
+                            children: artists?.map((ArtistInfo artist) {
+                                  var dbArtistArtUrl =
+                                      Hive.box<String>(Constants.cachedArtists)
+                                          .get(
+                                    base64.encode(utf8.encode(artist.name)),
+                                  );
+                                  return FutureBuilder<lastFm.Artist>(
+                                    future: dbArtistArtUrl == null
+                                        ? scrobblenaut
+                                            .Scrobblenaut.instance.artist
+                                            .getInfo(artist: artist.name)
+                                        : null,
+                                    builder: (context, snapshot) {
+                                      final lastFmArtistArtUrl =
+                                          snapshot.data?.images?.last?.text;
+                                      if (dbArtistArtUrl == null) {
+                                        dbArtistArtUrl =
+                                            lastFmArtistArtUrl ?? '';
+                                        Hive.box<String>(
+                                                Constants.cachedArtists)
+                                            .put(
+                                                base64.encode(
+                                                    utf8.encode(artist.name)),
+                                                dbArtistArtUrl);
+                                      }
+                                      return MyGridTile(
+                                        child: Column(children: [
+                                          AspectRatio(
+                                            aspectRatio: 0.7,
+                                            child: dbArtistArtUrl?.isNotEmpty
+                                                ? CachedNetworkImage(
+                                                    imageUrl: dbArtistArtUrl,
+                                                    placeholder: (context,
+                                                            url) =>
+                                                        CircularProgressIndicator(),
+                                                    errorWidget:
+                                                        (context, url, error) =>
+                                                            Icon(Icons.error),
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : artist?.artistArtPath != null
+                                                    ? Image.file(
+                                                        File(artist
+                                                            .artistArtPath),
+                                                        fit: BoxFit.cover,
+                                                      )
+                                                    : Image(
+                                                        image: AssetImage(Constants
+                                                            .defaultImagePath),
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                          ),
+                                          Text(
+                                            artist.name,
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                          ),
+                                        ]),
+                                      );
+                                    },
+                                  );
+                                })?.toList() ??
+                                [],
+                          );
+                        });
+                  }),
+              // TODO: implement this
+              Icon(Icons.directions_transit),
+              // TODO: implement this
+              Icon(Icons.directions_bike),
+              FutureBuilder<List<GenreInfo>>(
+                  future: audioQuery.getGenres(),
+                  builder: (context, snapshot) {
+                    final genres =
+                        searchResult as List<GenreInfo> ?? snapshot.data;
+                    final random = Random();
+                    return StreamBuilder<SequenceState>(
+                        stream: player.sequenceStateStream,
+                        builder: (context, snapshot) {
+                          return GridView.count(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 5,
+                            mainAxisSpacing: 5,
+                            childAspectRatio: 1.3,
+                            children: genres?.map((GenreInfo genre) {
+                                  var genreImagePath =
+                                      Hive.box<String>(Constants.cachedGenres)
+                                          .get(
+                                    base64.encode(utf8.encode(genre.name)),
+                                  );
+                                  if (genreImagePath == null) {
+                                    genreImagePath = Constants.genreImagePaths[
+                                        random.nextInt(
+                                            Constants.genreImagePaths.length)];
+                                    Hive.box<String>(Constants.cachedGenres)
+                                        .put(
+                                            base64.encode(
+                                                utf8.encode(genre.name)),
+                                            genreImagePath);
+                                  }
+                                  return MyGridTile(
+                                    child: Column(
+                                      children: [
+                                        AspectRatio(
+                                          aspectRatio: 1.7,
+                                          child: Image(
+                                            image: AssetImage(genreImagePath),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        Text(
+                                          genre.name,
+                                          maxLines: 1,
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                })?.toList() ??
+                                [],
+                          );
+                        });
+                  }),
+            ]),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MainPlayerScreen()),
+              );
+            },
+            child: MiniPlayer(player: player),
+          ),
+        ],
       ),
     );
   }
@@ -542,17 +547,20 @@ class SongListTile extends StatelessWidget {
   final SongInfo song;
   final GestureTapCallback onTap;
   final bool selected;
+  final bool draggable;
 
   const SongListTile({
     Key key,
     this.song,
     this.onTap,
     this.selected = false,
+    this.draggable = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      key: Key(song.id),
       leading: RoundedImage(
         image: song?.albumArtwork != null
             ? Image.file(File(song?.albumArtwork)).image
@@ -572,10 +580,26 @@ class SongListTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       selected: selected,
-      trailing: Text(
-        getFormattedDuration(
-          Duration(milliseconds: int.parse(song.duration)),
-          timeFormat: TimeFormat.optionalHoursMinutes0Seconds,
+      trailing: Container(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              getFormattedDuration(
+                Duration(milliseconds: int.parse(song.duration)),
+                timeFormat: TimeFormat.optionalHoursMinutes0Seconds,
+              ),
+            ),
+            if (draggable)
+              Container(
+                child: Icon(
+                  Icons.drag_handle,
+                  color: Theme.of(context).textTheme.bodyText1.color,
+                  size: 36,
+                ),
+                padding: EdgeInsets.only(left: 20.0),
+              ),
+          ],
         ),
       ),
     );
