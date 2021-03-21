@@ -216,7 +216,7 @@ class ZingMp3Plugin extends BasePlayerPlugin {
     final songUrlList = (json.decode(response.body)['data']
         as Map<String, dynamic>)
       ..removeWhere((key, value) => !value.startsWith('http'));
-    // Last value usually is of best quality. Probably... Maybe... Only if map's keys somehow is ordered... I'm not sure...
+    // Last value usually is of best quality.
     return songUrlList.values.toList().last;
   }
 }
