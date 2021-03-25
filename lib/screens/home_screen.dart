@@ -181,60 +181,57 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           Expanded(
             child: TabBarView(controller: _tabController, children: [
-              Consumer<AudioPlayer>(
-                builder: (_, player, __) => FutureBuilder<List<SongInfo>>(
-                    future: audioQuery.getSongs(),
-                    builder: (context, snapshot) {
-                      final allSongsWithoutSystemMusic = snapshot.data
-                          ?.where((song) =>
-                              !song.filePath.contains(r'/Android/media/'))
-                          ?.toList();
-                      final songs = searchResult as List<SongInfo> ??
-                          allSongsWithoutSystemMusic;
-                      return StreamBuilder<SequenceState>(
-                          stream: player.sequenceStateStream,
-                          builder: (context, snapshot) {
-                            final audioSource = songs
-                                ?.map((e) => AudioSource.uri(
-                                    Uri.file(e.filePath),
-                                    tag: e))
-                                ?.toList();
-                            return ListView(
-                              children: songs
-                                      ?.toList()
-                                      ?.map((SongInfo song) => SongListTile(
-                                            song: song,
-                                            onTap: () async {
-                                              // TODO: optimize this
-                                              // await player.setAudioSource(
-                                              //     ProgressiveAudioSource(
-                                              //         Uri.file(song.filePath),
-                                              //         tag: song));
-                                              // player.play();
-                                              await player.setAudioSource(
-                                                  ConcatenatingAudioSource(
-                                                      children: audioSource));
-                                              await player.seek(Duration.zero,
-                                                  index: songs.indexOf(song));
-                                              player.play();
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        MainPlayerScreen()),
-                                              );
-                                            },
-                                            selected: (snapshot.data
-                                                        ?.currentSource?.tag)
-                                                    ?.filePath ==
-                                                song.filePath,
-                                          ))
-                                      ?.toList() ??
-                                  [],
-                            );
-                          });
-                    }),
-              ),
+              FutureBuilder<List<SongInfo>>(
+                  future: audioQuery.getSongs(),
+                  builder: (context, snapshot) {
+                    final allSongsWithoutSystemMusic = snapshot.data
+                        ?.where((song) =>
+                            !song.filePath.contains(r'/Android/media/'))
+                        ?.toList();
+                    final songs = searchResult as List<SongInfo> ??
+                        allSongsWithoutSystemMusic;
+                    return StreamBuilder<SequenceState>(
+                        stream: player.sequenceStateStream,
+                        builder: (context, snapshot) {
+                          final audioSource = songs
+                              ?.map((e) =>
+                                  AudioSource.uri(Uri.file(e.filePath), tag: e))
+                              ?.toList();
+                          return ListView(
+                            children: songs
+                                    ?.toList()
+                                    ?.map((SongInfo song) => SongListTile(
+                                          song: song,
+                                          onTap: () async {
+                                            // TODO: optimize this
+                                            // await player.setAudioSource(
+                                            //     ProgressiveAudioSource(
+                                            //         Uri.file(song.filePath),
+                                            //         tag: song));
+                                            // player.play();
+                                            await player.setAudioSource(
+                                                ConcatenatingAudioSource(
+                                                    children: audioSource));
+                                            await player.seek(Duration.zero,
+                                                index: songs.indexOf(song));
+                                            player.play();
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MainPlayerScreen()),
+                                            );
+                                          },
+                                          selected: (snapshot
+                                                      .data?.currentSource?.tag)
+                                                  ?.filePath ==
+                                              song.filePath,
+                                        ))
+                                    ?.toList() ??
+                                [],
+                          );
+                        });
+                  }),
               FutureBuilder<List<AlbumInfo>>(
                   future: audioQuery.getAlbums(),
                   builder: (context, snapshot) {
@@ -247,7 +244,10 @@ class _HomeScreenState extends State<HomeScreen>
                               builder: (context, orientation) {
                             return GridView.count(
                               crossAxisCount:
-                                  orientation == Orientation.portrait ? 3 : 5,
+                                  MediaQuery.of(context).orientation ==
+                                          Orientation.portrait
+                                      ? 3
+                                      : 5,
                               crossAxisSpacing: 5,
                               mainAxisSpacing: 5,
                               childAspectRatio: 0.75,
@@ -502,7 +502,7 @@ class MiniPlayer extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                song?.artist ?? '<???>',
+                                song?.artist ?? 'Various artists',
                                 style: TextStyle(
                                   fontSize: 16,
                                   color:

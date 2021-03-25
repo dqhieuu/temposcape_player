@@ -48,7 +48,7 @@ dependencies:
   http: ^0.12.2
   html: ^0.14.0+4
   settings_ui: ^0.6.0
-  path_provider: ^1.6.28
+  ext_storage: ^1.0.3
 
 
 dev_dependencies:

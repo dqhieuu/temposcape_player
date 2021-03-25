@@ -4,10 +4,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:flutter_search_bar/flutter_search_bar.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
+import 'package:temposcape_player/plugins/chiasenhac_plugin.dart';
+import 'package:temposcape_player/plugins/nhaccuatui_plugin.dart';
 import 'package:temposcape_player/plugins/player_plugins.dart';
+import 'package:temposcape_player/plugins/soundcloud_plugin.dart';
+import 'package:temposcape_player/plugins/zingmp3_plugin.dart';
 import 'package:temposcape_player/screens/main_player_screen.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
@@ -57,73 +60,158 @@ class OnlineSongListTile extends StatelessWidget {
 }
 
 class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
-  SearchBar _searchBar;
-
   List<OnlineSong> _list = [];
-
   Timer _debounce;
+  ScrollController _scrollController;
+  BasePlayerPlugin _currentPlugin;
 
-  var zing = ZingMp3Plugin();
+  int _page = 1;
+  String _searchValue = '';
+  bool _hasReachedEnd = false;
 
-  AppBar buildAppBar(BuildContext context) {
-    return new AppBar(
-        title: Text('Zingmp3 test'),
-        flexibleSpace: FlexibleSpaceBar(),
-        actions: [_searchBar.getSearchAction(context)]);
-  }
+  final _plugins = <BasePlayerPlugin>[
+    ChiaSeNhacPlugin(),
+    ZingMp3Plugin(),
+    NhacCuaTuiPlugin(),
+    SoundCloudPlugin()
+  ];
 
   _OnlineSearchScreenState() {
-    _searchBar = new SearchBar(
-        inBar: false,
-        setState: setState,
-        onChanged: (value) {
-          if (_debounce?.isActive ?? false) _debounce.cancel();
-          _debounce = Timer(const Duration(milliseconds: 200), () async {
-            updateList(await zing.searchSong(value));
-          });
-        },
-        onSubmitted: (String value) async {
-          var zing = ZingMp3Plugin();
-          updateList(await zing.searchSong(value));
-        },
-        buildDefaultAppBar: buildAppBar);
+    _currentPlugin = _plugins.first;
   }
 
-  void updateList(List<OnlineSong> newList) {
+  void _setList(List<OnlineSong> newList) {
     setState(() {
       _list = newList;
     });
   }
 
+  void _addToList(List<OnlineSong> newList) {
+    setState(() {
+      _list.addAll(newList);
+    });
+  }
+
+  void _clearList() {
+    setState(() {
+      _list.clear();
+    });
+  }
+
+  Future<void> _setListAccordingToText() async {
+    _page = 1;
+    if (_searchValue.trim().isEmpty) {
+      print('noop');
+      _clearList();
+    } else {
+      _setList(await _currentPlugin.searchSong(_searchValue));
+      _scrollController.animateTo(
+        _scrollController.position.minScrollExtent,
+        duration: Duration(milliseconds: 100),
+        curve: Curves.easeIn,
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = new ScrollController();
+    _scrollController.addListener(() async {
+      if (_hasReachedEnd) return;
+
+      double maxScroll = _scrollController.position.maxScrollExtent;
+      double currentScroll = _scrollController.position.pixels;
+      const delta = 20.0;
+
+      if (maxScroll - currentScroll <= delta) {
+        _page++;
+        final newPage = await _currentPlugin.searchSong(
+          _searchValue,
+          page: _page,
+        );
+
+        if (newPage == null || newPage.isEmpty) {
+          _hasReachedEnd = true;
+          return;
+        }
+        _addToList(newPage);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<AudioPlayer>(
-      builder: (_, player, __) => Scaffold(
-        appBar: _searchBar.build(context),
-        body: ListView(
-          children: _list
-                  ?.map((OnlineSong song) => OnlineSongListTile(
-                        song: song,
-                        onTap: () async {
-                          final songUrl = await song.songUrl();
-                          await player.setAudioSource(ProgressiveAudioSource(
-                              Uri.parse(songUrl),
-                              tag: SongInfo(
-                                  artist: song.artist,
-                                  title: song.title,
-                                  isPodcast: true,
-                                  filePath: songUrl,
-                                  albumArtwork: song.albumArtUrl)));
-                          player.play();
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => MainPlayerScreen()));
-                        },
-                      ))
-                  ?.toList() ??
-              [],
+    final player = context.read<AudioPlayer>();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Online song plugins'),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(120),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Column(
+              children: [
+                DropdownButton(
+                  items: _plugins.map((e) {
+                    return DropdownMenuItem(value: e, child: Text(e.title));
+                  }).toList(),
+                  isExpanded: true,
+                  onChanged: (BasePlayerPlugin selectedPlugin) {
+                    setState(() {
+                      _currentPlugin = selectedPlugin;
+                      _setListAccordingToText();
+                    });
+                  },
+                  value: _currentPlugin,
+                ),
+                TextField(
+                  onChanged: (value) {
+                    _searchValue = value;
+                    if (_debounce?.isActive ?? false) _debounce.cancel();
+                    _debounce = Timer(const Duration(milliseconds: 300),
+                        _setListAccordingToText);
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              controller: _scrollController,
+              children: _list
+                      ?.map((OnlineSong song) => OnlineSongListTile(
+                            song: song,
+                            onTap: () async {
+                              final songUrl = await song.songUrl();
+                              if (songUrl == null || songUrl.isEmpty) return;
+                              await player.setAudioSource(
+                                  ProgressiveAudioSource(Uri.parse(songUrl),
+                                      tag: SongInfo(
+                                          artist: song.artist,
+                                          title: song.title,
+                                          isPodcast: true,
+                                          filePath: songUrl,
+                                          albumArtwork: song.albumArtUrl ??
+                                              song.albumThumbnailUrl)));
+                              player.play();
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          MainPlayerScreen()));
+                            },
+                          ))
+                      ?.toList() ??
+                  [],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -131,6 +219,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 }

@@ -2,6 +2,7 @@ import 'dart:core';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:ext_storage/ext_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -38,8 +39,14 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
   void _downloadMusicToPhone(String url, String title) async {
     if (url == null || !url.startsWith('http')) return;
     print(url);
+
+    // Example: [Temposcape] Song name_180000000.mp3
     final file = File(
-        '/storage/emulated/0/Music/downloaded_${title?.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '-') ?? ''}_${DateTime.now().millisecondsSinceEpoch}.mp3');
+        ('${await ExtStorage.getExternalStoragePublicDirectory(ExtStorage.DIRECTORY_MUSIC)}'
+            '/[${Constants.appName}] '
+            '${title?.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '-') ?? ''}'
+            '_${DateTime.now().millisecondsSinceEpoch}.mp3'));
+    print(file.path);
     file.writeAsBytesSync((await http.get(url)).bodyBytes);
     await _refreshMediaStore(file.path);
   }

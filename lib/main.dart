@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:just_audio/just_audio.dart';
@@ -40,6 +41,18 @@ class _MyAppState extends State<MyApp> {
           brightness: Brightness.dark,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
+        localizationsDelegates: [
+          // ... app-specific localization delegate[s] here
+          // TODO: uncomment the line below after codegen
+          // AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('en', 'US'),
+          const Locale('vi', 'VN'),
+        ],
         home: AudioServiceWidget(child: HomeScreen()),
       ),
     );
@@ -49,6 +62,12 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _player = AudioPlayer();
+    _player.playerStateStream.listen((event) async {
+      if (event.processingState == ProcessingState.completed) {
+        _player.pause();
+        await _player.seek(Duration.zero);
+      }
+    });
     final lastFmAuth =
         scrobblenaut.LastFM.noAuth(apiKey: Constants.lastFmApiKey);
     scrobblenaut.Scrobblenaut(lastFM: lastFmAuth);
