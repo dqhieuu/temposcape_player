@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
@@ -11,8 +10,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
-import 'package:scrobblenaut/lastfm.dart' as lastFm;
-import 'package:scrobblenaut/scrobblenaut.dart' as scrobblenaut;
 import 'package:temposcape_player/screens/online_search_screen.dart';
 import 'package:temposcape_player/screens/song_queue_screen.dart';
 import 'package:temposcape_player/utils/utils.dart';
@@ -46,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    Hive.box<String>(Constants.cachedArtists).clear();
     _tabController = TabController(vsync: this, length: myTabs.length);
     _searchBar = new SearchBar(
       // TODO: fix bugs, this has bugs, don't know why
@@ -280,6 +278,7 @@ class _HomeScreenState extends State<HomeScreen>
                   builder: (context, snapshot) {
                     final artists =
                         searchResult as List<ArtistInfo> ?? snapshot.data;
+                    Hive.box<String>(Constants.cachedArtists).clear();
                     return StreamBuilder<SequenceState>(
                         stream: player.sequenceStateStream,
                         builder: (context, snapshot) {
@@ -289,66 +288,66 @@ class _HomeScreenState extends State<HomeScreen>
                             mainAxisSpacing: 5,
                             childAspectRatio: 0.55,
                             children: artists?.map((ArtistInfo artist) {
-                                  var dbArtistArtUrl =
-                                      Hive.box<String>(Constants.cachedArtists)
-                                          .get(
-                                    base64.encode(utf8.encode(artist.name)),
-                                  );
-                                  return FutureBuilder<lastFm.Artist>(
-                                    future: dbArtistArtUrl == null
-                                        ? scrobblenaut
-                                            .Scrobblenaut.instance.artist
-                                            .getInfo(artist: artist.name)
-                                        : null,
-                                    builder: (context, snapshot) {
-                                      final lastFmArtistArtUrl =
-                                          snapshot.data?.images?.last?.text;
-                                      if (dbArtistArtUrl == null) {
-                                        dbArtistArtUrl =
-                                            lastFmArtistArtUrl ?? '';
-                                        Hive.box<String>(
-                                                Constants.cachedArtists)
-                                            .put(
-                                                base64.encode(
-                                                    utf8.encode(artist.name)),
-                                                dbArtistArtUrl);
-                                      }
-                                      return MyGridTile(
-                                        child: Column(children: [
-                                          AspectRatio(
-                                            aspectRatio: 0.7,
-                                            child: dbArtistArtUrl?.isNotEmpty
-                                                ? CachedNetworkImage(
-                                                    imageUrl: dbArtistArtUrl,
-                                                    placeholder: (context,
-                                                            url) =>
-                                                        CircularProgressIndicator(),
-                                                    errorWidget:
-                                                        (context, url, error) =>
-                                                            Icon(Icons.error),
+                                  // return FutureBuilder<lastFm.Artist>(
+                                  //   future: scrobblenaut
+                                  //       .Scrobblenaut.instance.artist
+                                  //       .getInfo(artist: artist.name),
+                                  //   builder: (context, snapshot) {
+                                  //     String dbArtistArtUrl = Hive.box<String>(
+                                  //             Constants.cachedArtists)
+                                  //         .get(base64.encode(
+                                  //             utf8.encode(artist.name)));
+                                  //     if (dbArtistArtUrl == null) {
+                                  //       print('this');
+                                  //       final lastFmArtistArtUrl =
+                                  //           snapshot.data?.images?.last?.text;
+                                  //       dbArtistArtUrl =
+                                  //           lastFmArtistArtUrl ?? '';
+                                  //       print(dbArtistArtUrl);
+                                  //       Hive.box<String>(
+                                  //               Constants.cachedArtists)
+                                  //           .put(
+                                  //               base64.encode(
+                                  //                   utf8.encode(artist.name)),
+                                  //               dbArtistArtUrl);
+                                  //     }
+                                  return MyGridTile(
+                                    child: Column(children: [
+                                      AspectRatio(
+                                        aspectRatio: 0.7,
+                                        child:
+                                            // dbArtistArtUrl.isNotEmpty
+                                            //     ? CachedNetworkImage(
+                                            //         imageUrl: dbArtistArtUrl,
+                                            //         placeholder: (context,
+                                            //                 url) =>
+                                            //             CircularProgressIndicator(),
+                                            //         errorWidget:
+                                            //             (context, url, error) =>
+                                            //                 Icon(Icons.error),
+                                            //         fit: BoxFit.cover,
+                                            //       )
+                                            //     :
+                                            artist?.artistArtPath != null
+                                                ? Image.file(
+                                                    File(artist.artistArtPath),
                                                     fit: BoxFit.cover,
                                                   )
-                                                : artist?.artistArtPath != null
-                                                    ? Image.file(
-                                                        File(artist
-                                                            .artistArtPath),
-                                                        fit: BoxFit.cover,
-                                                      )
-                                                    : Image(
-                                                        image: AssetImage(Constants
-                                                            .defaultImagePath),
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                          ),
-                                          Text(
-                                            artist.name,
-                                            textAlign: TextAlign.center,
-                                            maxLines: 2,
-                                          ),
-                                        ]),
-                                      );
-                                    },
+                                                : Image(
+                                                    image: AssetImage(Constants
+                                                        .defaultImagePath),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                      ),
+                                      Text(
+                                        artist.name,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                      ),
+                                    ]),
                                   );
+                                  // },
+                                  // );
                                 })?.toList() ??
                                 [],
                           );
