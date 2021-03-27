@@ -1,3 +1,6 @@
+import 'package:audio_service/audio_service.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
+
 /// A discrete value that's a text representation of a duration.
 ///
 /// It separates a duration into a component time quantity,
@@ -38,3 +41,93 @@ String getFormattedDuration(Duration duration,
 
   return '$hours$minutes$seconds';
 }
+
+class SongExtraInfo {
+  String filePath;
+  String uri;
+  String track;
+  String albumId;
+  String artistId;
+  String displayName;
+  String year;
+  String bookmark;
+  String composer;
+  String fileSize;
+  bool isPodcast;
+  bool isAlarm;
+  bool isMusic;
+  bool isNotification;
+  bool isRingtone;
+  bool isOnline;
+
+  SongExtraInfo(
+      {this.filePath,
+      this.uri,
+      this.track,
+      this.albumId,
+      this.artistId,
+      this.displayName,
+      this.year,
+      this.bookmark,
+      this.composer,
+      this.fileSize,
+      this.isPodcast = false,
+      this.isAlarm = false,
+      this.isMusic = false,
+      this.isNotification = false,
+      this.isRingtone = false,
+      this.isOnline = false});
+  Map<String, dynamic> toMap() {
+    return {
+      'filePath': filePath,
+      'uri': uri,
+      'track': track,
+      'albumId': albumId,
+      'artistId': artistId,
+      'displayName': displayName,
+      'year': year,
+      'bookmark': bookmark,
+      'composer': composer,
+      'fileSize': fileSize,
+      'isPodcast': isPodcast,
+      'isAlarm': isAlarm,
+      'isMusic': isMusic,
+      'isNotification': isNotification,
+      'isRingtone': isRingtone,
+      'isOnline': isOnline,
+    };
+  }
+}
+
+MediaItem songInfoToMediaItem(SongInfo songInfo) => MediaItem(
+      id: songInfo.id,
+      album: songInfo.album,
+      title: songInfo.title,
+      artist: songInfo.artist,
+// this.genre,
+      duration: Duration(milliseconds: int.parse(songInfo.duration)),
+      artUri: songInfo.albumArtwork,
+// this.playable = true,
+      displayTitle: songInfo.title,
+      displaySubtitle: songInfo.artist,
+// this.displayDescription,
+// this.rating,
+      extras: SongExtraInfo(
+        filePath: songInfo.filePath,
+        uri: songInfo.uri,
+        track: songInfo.track,
+        albumId: songInfo.albumId,
+        artistId: songInfo.artistId,
+        displayName: songInfo.displayName,
+        year: songInfo.year,
+        bookmark: songInfo.bookmark,
+        composer: songInfo.composer,
+        fileSize: songInfo.fileSize,
+        isPodcast: songInfo.isPodcast,
+        isAlarm: songInfo.isAlarm,
+        isMusic: songInfo.isMusic,
+        isNotification: songInfo.isNotification,
+        isRingtone: songInfo.isRingtone,
+        isOnline: false,
+      ).toMap(),
+    );

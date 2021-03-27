@@ -1,17 +1,16 @@
 import 'dart:async';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:provider/provider.dart';
 import 'package:temposcape_player/plugins/chiasenhac_plugin.dart';
 import 'package:temposcape_player/plugins/nhaccuatui_plugin.dart';
 import 'package:temposcape_player/plugins/player_plugins.dart';
 import 'package:temposcape_player/plugins/soundcloud_plugin.dart';
 import 'package:temposcape_player/plugins/zingmp3_plugin.dart';
 import 'package:temposcape_player/screens/main_player_screen.dart';
+import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
@@ -142,8 +141,6 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final player = context.read<AudioPlayer>();
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Online song plugins'),
@@ -190,16 +187,21 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                             onTap: () async {
                               final songUrl = await song.songUrl();
                               if (songUrl == null || songUrl.isEmpty) return;
-                              await player.setAudioSource(
-                                  ProgressiveAudioSource(Uri.parse(songUrl),
-                                      tag: SongInfo(
-                                          artist: song.artist,
-                                          title: song.title,
-                                          isPodcast: true,
-                                          filePath: songUrl,
-                                          albumArtwork: song.albumArtUrl ??
-                                              song.albumThumbnailUrl)));
-                              player.play();
+                              await AudioService.updateQueue(<MediaItem>[
+                                MediaItem(
+                                  id: song.id,
+                                  artist: song.artist,
+                                  title: song.title,
+                                  album: '',
+                                  extras: SongExtraInfo(
+                                    isOnline: true,
+                                    uri: songUrl,
+                                  ).toMap(),
+                                  artUri: song.albumArtUrl ??
+                                      song.albumThumbnailUrl,
+                                ),
+                              ]);
+                              AudioService.play();
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(

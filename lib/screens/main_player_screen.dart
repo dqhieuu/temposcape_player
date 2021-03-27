@@ -2,18 +2,15 @@ import 'dart:core';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:ext_storage/ext_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:just_audio/just_audio.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:provider/provider.dart';
 import 'package:temposcape_player/screens/song_queue_screen.dart';
-import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
 import '../utils/utils.dart';
@@ -53,7 +50,6 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final player = context.read<AudioPlayer>();
     return Scaffold(
       appBar: AppBar(
         title: Text('Main player'),
@@ -62,39 +58,47 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
-              StreamBuilder<SequenceState>(
-                  stream: player.sequenceStateStream,
+              StreamBuilder<MediaItem>(
+                  stream: AudioService.currentMediaItemStream,
                   builder: (context, snapshot) {
-                    return PlayerSongInfo(snapshot.data?.currentSource?.tag);
+                    return PlayerSongInfo(snapshot.data);
                   }),
-              StreamBuilder<Duration>(
-                  stream: player.durationStream,
+              StreamBuilder<MediaItem>(
+                  stream: AudioService.currentMediaItemStream,
                   builder: (context, snapshot) {
-                    final duration = snapshot.data ?? Duration.zero;
+                    final duration = snapshot.data?.duration ?? Duration.zero;
                     return StreamBuilder<Duration>(
-                        stream: player.positionStream,
+                        stream: AudioService.positionStream,
                         builder: (context, snapshot) {
                           final position = snapshot.data ?? Duration.zero;
                           return PlayerSeekBar(
                             duration: duration,
                             position: position,
                             onChangeEnd: (value) {
-                              player.seek(value);
+                              AudioService.seekTo(value);
                             },
                           );
                         });
                   }),
-              PlayerControlBar(player),
+              PlayerControlBar(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  IconButton(
-                      icon: Icon(Icons.download_rounded),
-                      onPressed: () async {
-                        final songInfo = (player
-                            ?.sequenceState?.currentSource?.tag as SongInfo);
-                        _downloadMusicToPhone(
-                            songInfo?.filePath, songInfo?.title);
+                  StreamBuilder<MediaItem>(
+                      stream: AudioService.currentMediaItemStream,
+                      builder: (context, snapshot) {
+                        return (snapshot.data?.extras ?? {})['isOnline'] ??
+                                false
+                            ? IconButton(
+                                icon: Icon(Icons.download_rounded),
+                                onPressed: () async {
+                                  final mediaItem =
+                                      AudioService.currentMediaItem;
+                                  _downloadMusicToPhone(
+                                      (mediaItem?.extras ?? {})['uri'],
+                                      mediaItem?.title);
+                                })
+                            : Container();
                       }),
                   IconButton(
                       icon: Icon(Icons.queue_music),
@@ -113,7 +117,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
 }
 
 class PlayerSongInfo extends StatelessWidget {
-  final SongInfo song;
+  final MediaItem song;
 
   const PlayerSongInfo(
     this.song, {
@@ -124,16 +128,13 @@ class PlayerSongInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        RoundedImage(
-          image: song?.isPodcast ?? false
-              ? (song?.albumArtwork != null
-                  ? Image.network(song?.albumArtwork).image
-                  : AssetImage(Constants.defaultImagePath))
-              : (song?.albumArtwork != null
-                  ? Image.file(File(song?.albumArtwork)).image
-                  : AssetImage(Constants.defaultImagePath)),
-          width: 250,
-          height: 250,
+        CircleAvatar(
+          backgroundImage: (song?.artUri != null
+              ? ((song?.extras ?? {})['isOnline'] ?? false
+                  ? Image.network(song.artUri).image
+                  : Image.file(File(song.artUri)).image)
+              : AssetImage(Constants.defaultImagePath)),
+          radius: 120,
         ),
         Text(
           song?.title ?? 'Nyoron',
@@ -218,86 +219,156 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
 }
 
 class PlayerControlBar extends StatelessWidget {
-  final AudioPlayer player;
-
-  const PlayerControlBar(this.player);
-
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        StreamBuilder<bool>(
-            stream: player.shuffleModeEnabledStream,
-            builder: (context, snapshot) {
-              final shuffleModeEnabled = snapshot.data ?? false;
-              return IconButton(
-                icon: Icon(shuffleModeEnabled
+    return StreamBuilder<PlaybackState>(
+        stream: AudioService.playbackStateStream,
+        builder: (context, snapshot) {
+          final shuffleMode =
+              snapshot.data?.shuffleMode ?? AudioServiceShuffleMode.none;
+          final repeatMode =
+              snapshot.data?.repeatMode ?? AudioServiceRepeatMode.none;
+          final isPlaying = snapshot.data?.playing ?? false;
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              //   StreamBuilder<bool>(
+              //       stream: player.shuffleModeEnabledStream,
+              //       builder: (context, snapshot) {
+              //         final shuffleModeEnabled = snapshot.data ?? false;
+              //         return IconButton(
+              //           icon: Icon(shuffleModeEnabled
+              //               ? MdiIcons.shuffle
+              //               : MdiIcons.shuffleDisabled),
+              //           onPressed: () {
+              //             player.setShuffleModeEnabled(!shuffleModeEnabled);
+              //           },
+              //         );
+              //       }),
+              //   IconButton(
+              //     onPressed: () {
+              //       player.seekToPrevious();
+              //     },
+              //     icon: Icon(FontAwesomeIcons.backward),
+              //   ),
+              //   StreamBuilder<PlayerState>(
+              //       stream: player.playerStateStream,
+              //       builder: (context, snapshot) {
+              //         if (snapshot.data?.playing ?? false) {
+              //           return IconButton(
+              //             onPressed: () {
+              //               player.pause();
+              //             },
+              //             icon: Icon(FontAwesomeIcons.pause),
+              //           );
+              //         }
+              //         return IconButton(
+              //           onPressed: () {
+              //             player.play();
+              //           },
+              //           icon: Icon(FontAwesomeIcons.play),
+              //         );
+              //       }),
+              //   IconButton(
+              //     onPressed: () {
+              //       player.seekToNext();
+              //     },
+              //     icon: Icon(FontAwesomeIcons.forward),
+              //   ),
+              //   StreamBuilder<LoopMode>(
+              //       stream: player.loopModeStream,
+              //       builder: (context, snapshot) {
+              //         if (snapshot.data == LoopMode.off) {
+              //           return IconButton(
+              //             onPressed: () {
+              //               player.setLoopMode(LoopMode.all);
+              //             },
+              //             icon: Icon(
+              //               MdiIcons.repeatOff,
+              //             ),
+              //           );
+              //         } else if (snapshot.data == LoopMode.one) {
+              //           return IconButton(
+              //             onPressed: () {
+              //               player.setLoopMode(LoopMode.off);
+              //             },
+              //             icon: Icon(Icons.repeat_one),
+              //           );
+              //         }
+              //         return IconButton(
+              //           onPressed: () {
+              //             player.setLoopMode(LoopMode.one);
+              //           },
+              //           icon: const Icon(Icons.repeat),
+              //         );
+              //       }),
+
+              IconButton(
+                icon: Icon(shuffleMode == AudioServiceShuffleMode.all
                     ? MdiIcons.shuffle
                     : MdiIcons.shuffleDisabled),
                 onPressed: () {
-                  player.setShuffleModeEnabled(!shuffleModeEnabled);
+                  switch (shuffleMode) {
+                    case AudioServiceShuffleMode.all:
+                      AudioService.setShuffleMode(AudioServiceShuffleMode.none);
+                      break;
+                    case AudioServiceShuffleMode.none:
+                      AudioService.setShuffleMode(AudioServiceShuffleMode.all);
+                      break;
+                    default:
+                      break;
+                  }
                 },
-              );
-            }),
-        IconButton(
-          onPressed: () {
-            player.seekToPrevious();
-          },
-          icon: Icon(FontAwesomeIcons.backward),
-        ),
-        StreamBuilder<PlayerState>(
-            stream: player.playerStateStream,
-            builder: (context, snapshot) {
-              if (snapshot.data?.playing ?? false) {
-                return IconButton(
-                  onPressed: () {
-                    player.pause();
-                  },
-                  icon: Icon(FontAwesomeIcons.pause),
-                );
-              }
-              return IconButton(
+              ),
+              IconButton(
+                onPressed: AudioService.skipToPrevious,
+                icon: Icon(FontAwesomeIcons.backward),
+              ),
+              IconButton(
+                icon: Icon(
+                    isPlaying ? FontAwesomeIcons.pause : FontAwesomeIcons.play),
                 onPressed: () {
-                  player.play();
+                  if (isPlaying) {
+                    AudioService.pause();
+                  } else {
+                    AudioService.play();
+                  }
                 },
-                icon: Icon(FontAwesomeIcons.play),
-              );
-            }),
-        IconButton(
-          onPressed: () {
-            player.seekToNext();
-          },
-          icon: Icon(FontAwesomeIcons.forward),
-        ),
-        StreamBuilder<LoopMode>(
-            stream: player.loopModeStream,
-            builder: (context, snapshot) {
-              if (snapshot.data == LoopMode.off) {
-                return IconButton(
-                  onPressed: () {
-                    player.setLoopMode(LoopMode.all);
-                  },
-                  icon: Icon(
-                    MdiIcons.repeatOff,
-                  ),
-                );
-              } else if (snapshot.data == LoopMode.one) {
-                return IconButton(
-                  onPressed: () {
-                    player.setLoopMode(LoopMode.off);
-                  },
-                  icon: Icon(Icons.repeat_one),
-                );
-              }
-              return IconButton(
+              ),
+              IconButton(
+                onPressed: AudioService.skipToNext,
+                icon: Icon(FontAwesomeIcons.forward),
+              ),
+              IconButton(
                 onPressed: () {
-                  player.setLoopMode(LoopMode.one);
+                  switch (repeatMode) {
+                    case AudioServiceRepeatMode.none:
+                      AudioService.setRepeatMode(AudioServiceRepeatMode.all);
+                      break;
+                    case AudioServiceRepeatMode.all:
+                      AudioService.setRepeatMode(AudioServiceRepeatMode.one);
+                      break;
+                    case AudioServiceRepeatMode.one:
+                      AudioService.setRepeatMode(AudioServiceRepeatMode.none);
+                      break;
+                    default:
+                      break;
+                  }
                 },
-                icon: const Icon(Icons.repeat),
-              );
-            }),
-      ],
-    );
+                icon: Icon(
+                  repeatMode == AudioServiceRepeatMode.none
+                      ? Icons.repeat
+                      : repeatMode == AudioServiceRepeatMode.all
+                          ? Icons.repeat
+                          : Icons.repeat_one,
+                  color: repeatMode == AudioServiceRepeatMode.none
+                      ? Colors.red
+                      : Colors.white,
+                ),
+              ),
+            ],
+          );
+        });
   }
 }

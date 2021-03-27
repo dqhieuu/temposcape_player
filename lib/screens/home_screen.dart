@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
@@ -131,6 +132,41 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  void showAddPlaylistDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final myController = TextEditingController();
+        return AlertDialog(
+          title: Text('Add playlist'),
+          content: TextField(
+            controller: myController,
+            decoration: InputDecoration(
+              labelText: "Title",
+            ),
+          ),
+          actions: [
+            FlatButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            FlatButton(
+              onPressed: () async {
+                await FlutterAudioQuery.createPlaylist(
+                    playlistName: myController.text);
+                Navigator.pop(context);
+                setState(() {});
+              },
+              child: const Text('Add'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final player = context.read<AudioPlayer>();
@@ -188,90 +224,111 @@ class _HomeScreenState extends State<HomeScreen>
                         ?.toList();
                     final songs = searchResult as List<SongInfo> ??
                         allSongsWithoutSystemMusic;
-                    return StreamBuilder<SequenceState>(
-                        stream: player.sequenceStateStream,
-                        builder: (context, snapshot) {
-                          final audioSource = songs
-                              ?.map((e) =>
-                                  AudioSource.uri(Uri.file(e.filePath), tag: e))
-                              ?.toList();
-                          return ListView(
-                            children: songs
-                                    ?.toList()
-                                    ?.map((SongInfo song) => SongListTile(
-                                          song: song,
-                                          onTap: () async {
-                                            // TODO: optimize this
-                                            // await player.setAudioSource(
-                                            //     ProgressiveAudioSource(
-                                            //         Uri.file(song.filePath),
-                                            //         tag: song));
-                                            // player.play();
-                                            await player.setAudioSource(
-                                                ConcatenatingAudioSource(
-                                                    children: audioSource));
-                                            await player.seek(Duration.zero,
-                                                index: songs.indexOf(song));
-                                            player.play();
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      MainPlayerScreen()),
-                                            );
-                                          },
-                                          selected: (snapshot
-                                                      .data?.currentSource?.tag)
-                                                  ?.filePath ==
-                                              song.filePath,
-                                        ))
-                                    ?.toList() ??
-                                [],
-                          );
-                        });
+                    // return StreamBuilder<SequenceState>(
+                    //     stream: player.sequenceStateStream,
+                    //     builder: (context, snapshot) {
+                    //       final audioSource = songs
+                    //           ?.map((e) =>
+                    //               AudioSource.uri(Uri.file(e.filePath), tag: e))
+                    //           ?.toList();
+                    //       return ListView(
+                    //         children: songs
+                    //                 ?.toList()
+                    //                 ?.map((SongInfo song) => SongListTile(
+                    //                       song: song,
+                    //                       onTap: () async {
+                    //                         // TODO: optimize this
+                    //                         // await player.setAudioSource(
+                    //                         //     ProgressiveAudioSource(
+                    //                         //         Uri.file(song.filePath),
+                    //                         //         tag: song));
+                    //                         // player.play();
+                    //                         await player.setAudioSource(
+                    //                             ConcatenatingAudioSource(
+                    //                                 children: audioSource));
+                    //                         await player.seek(Duration.zero,
+                    //                             index: songs.indexOf(song));
+                    //                         player.play();
+                    //                         Navigator.push(
+                    //                           context,
+                    //                           MaterialPageRoute(
+                    //                               builder: (context) =>
+                    //                                   MainPlayerScreen()),
+                    //                         );
+                    //                       },
+                    //                       selected: (snapshot
+                    //                                   .data?.currentSource?.tag)
+                    //                               ?.filePath ==
+                    //                           song.filePath,
+                    //                     ))
+                    //                 ?.toList() ??
+                    //             [],
+                    //       );
+                    //     });
+                    return ListView(
+                      children: songs
+                              ?.toList()
+                              ?.map((SongInfo song) => SongListTile(
+                                    song: songInfoToMediaItem(song),
+                                    onTap: () async {
+                                      await AudioService.updateQueue(songs
+                                          .map(songInfoToMediaItem)
+                                          .toList());
+                                      await AudioService.skipToQueueItem(
+                                          song.id);
+                                      AudioService.play();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                MainPlayerScreen()),
+                                      );
+                                    },
+                                    // selected:
+                                    //     (snapshot.data?.currentSource?.tag)
+                                    //             ?.filePath ==
+                                    //         song.filePath,
+                                  ))
+                              ?.toList() ??
+                          [],
+                    );
                   }),
               FutureBuilder<List<AlbumInfo>>(
                   future: audioQuery.getAlbums(),
                   builder: (context, snapshot) {
                     final albums =
                         searchResult as List<AlbumInfo> ?? snapshot.data;
-                    return StreamBuilder<SequenceState>(
-                        stream: player.sequenceStateStream,
-                        builder: (context, snapshot) {
-                          return OrientationBuilder(
-                              builder: (context, orientation) {
-                            return GridView.count(
-                              crossAxisCount:
-                                  MediaQuery.of(context).orientation ==
-                                          Orientation.portrait
-                                      ? 3
-                                      : 5,
-                              crossAxisSpacing: 5,
-                              mainAxisSpacing: 5,
-                              childAspectRatio: 0.75,
-                              children: albums?.map((AlbumInfo album) {
-                                    return MyGridTile(
-                                      child: Column(
-                                        children: [
-                                          album?.albumArt != null
-                                              ? Image.file(File(album.albumArt))
-                                              : Image(
-                                                  image: AssetImage(Constants
-                                                      .defaultImagePath),
-                                                ),
-                                          Text(
-                                            album.title,
-                                            textAlign: TextAlign.center,
-                                            maxLines: 2,
-                                          )
-                                        ],
-                                      ),
-                                    );
-                                  })?.toList() ??
-                                  [],
-                            );
-                          });
-                        });
+                    return OrientationBuilder(builder: (context, orientation) {
+                      return GridView.count(
+                        crossAxisCount: MediaQuery.of(context).orientation ==
+                                Orientation.portrait
+                            ? 3
+                            : 5,
+                        crossAxisSpacing: 5,
+                        mainAxisSpacing: 5,
+                        childAspectRatio: 0.75,
+                        children: albums?.map((AlbumInfo album) {
+                              return MyGridTile(
+                                child: Column(
+                                  children: [
+                                    album?.albumArt != null
+                                        ? Image.file(File(album.albumArt))
+                                        : Image(
+                                            image: AssetImage(
+                                                Constants.defaultImagePath),
+                                          ),
+                                    Text(
+                                      album.title,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                    )
+                                  ],
+                                ),
+                              );
+                            })?.toList() ??
+                            [],
+                      );
+                    });
                   }),
               FutureBuilder<List<ArtistInfo>>(
                   future: audioQuery.getArtists(),
@@ -279,82 +336,118 @@ class _HomeScreenState extends State<HomeScreen>
                     final artists =
                         searchResult as List<ArtistInfo> ?? snapshot.data;
                     Hive.box<String>(Constants.cachedArtists).clear();
-                    return StreamBuilder<SequenceState>(
-                        stream: player.sequenceStateStream,
-                        builder: (context, snapshot) {
-                          return GridView.count(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 5,
-                            mainAxisSpacing: 5,
-                            childAspectRatio: 0.55,
-                            children: artists?.map((ArtistInfo artist) {
-                                  // return FutureBuilder<lastFm.Artist>(
-                                  //   future: scrobblenaut
-                                  //       .Scrobblenaut.instance.artist
-                                  //       .getInfo(artist: artist.name),
-                                  //   builder: (context, snapshot) {
-                                  //     String dbArtistArtUrl = Hive.box<String>(
-                                  //             Constants.cachedArtists)
-                                  //         .get(base64.encode(
-                                  //             utf8.encode(artist.name)));
-                                  //     if (dbArtistArtUrl == null) {
-                                  //       print('this');
-                                  //       final lastFmArtistArtUrl =
-                                  //           snapshot.data?.images?.last?.text;
-                                  //       dbArtistArtUrl =
-                                  //           lastFmArtistArtUrl ?? '';
-                                  //       print(dbArtistArtUrl);
-                                  //       Hive.box<String>(
-                                  //               Constants.cachedArtists)
-                                  //           .put(
-                                  //               base64.encode(
-                                  //                   utf8.encode(artist.name)),
-                                  //               dbArtistArtUrl);
-                                  //     }
-                                  return MyGridTile(
-                                    child: Column(children: [
-                                      AspectRatio(
-                                        aspectRatio: 0.7,
-                                        child:
-                                            // dbArtistArtUrl.isNotEmpty
-                                            //     ? CachedNetworkImage(
-                                            //         imageUrl: dbArtistArtUrl,
-                                            //         placeholder: (context,
-                                            //                 url) =>
-                                            //             CircularProgressIndicator(),
-                                            //         errorWidget:
-                                            //             (context, url, error) =>
-                                            //                 Icon(Icons.error),
-                                            //         fit: BoxFit.cover,
-                                            //       )
-                                            //     :
-                                            artist?.artistArtPath != null
-                                                ? Image.file(
-                                                    File(artist.artistArtPath),
-                                                    fit: BoxFit.cover,
-                                                  )
-                                                : Image(
-                                                    image: AssetImage(Constants
-                                                        .defaultImagePath),
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                      ),
-                                      Text(
-                                        artist.name,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                      ),
-                                    ]),
-                                  );
-                                  // },
-                                  // );
-                                })?.toList() ??
-                                [],
-                          );
-                        });
+                    return GridView.count(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 5,
+                      mainAxisSpacing: 5,
+                      childAspectRatio: 0.55,
+                      children: artists?.map((ArtistInfo artist) {
+                            // return FutureBuilder<lastFm.Artist>(
+                            //   future: scrobblenaut
+                            //       .Scrobblenaut.instance.artist
+                            //       .getInfo(artist: artist.name),
+                            //   builder: (context, snapshot) {
+                            //     String dbArtistArtUrl = Hive.box<String>(
+                            //             Constants.cachedArtists)
+                            //         .get(base64.encode(
+                            //             utf8.encode(artist.name)));
+                            //     if (dbArtistArtUrl == null) {
+                            //       print('this');
+                            //       final lastFmArtistArtUrl =
+                            //           snapshot.data?.images?.last?.text;
+                            //       dbArtistArtUrl =
+                            //           lastFmArtistArtUrl ?? '';
+                            //       print(dbArtistArtUrl);
+                            //       Hive.box<String>(
+                            //               Constants.cachedArtists)
+                            //           .put(
+                            //               base64.encode(
+                            //                   utf8.encode(artist.name)),
+                            //               dbArtistArtUrl);
+                            //     }
+                            return MyGridTile(
+                              child: Column(children: [
+                                AspectRatio(
+                                  aspectRatio: 0.7,
+                                  child:
+                                      // dbArtistArtUrl.isNotEmpty
+                                      //     ? CachedNetworkImage(
+                                      //         imageUrl: dbArtistArtUrl,
+                                      //         placeholder: (context,
+                                      //                 url) =>
+                                      //             CircularProgressIndicator(),
+                                      //         errorWidget:
+                                      //             (context, url, error) =>
+                                      //                 Icon(Icons.error),
+                                      //         fit: BoxFit.cover,
+                                      //       )
+                                      //     :
+                                      artist?.artistArtPath != null
+                                          ? Image.file(
+                                              File(artist.artistArtPath),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Image(
+                                              image: AssetImage(
+                                                  Constants.defaultImagePath),
+                                              fit: BoxFit.cover,
+                                            ),
+                                ),
+                                Text(
+                                  artist.name,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                ),
+                              ]),
+                            );
+                            // },
+                            // );
+                          })?.toList() ??
+                          [],
+                    );
                   }),
               // TODO: implement this
-              Icon(Icons.directions_transit),
+              FutureBuilder<List<PlaylistInfo>>(
+                  future: audioQuery.getPlaylists(),
+                  builder: (context, snapshot) {
+                    final playlists = snapshot.data?.toList();
+                    if (playlists != null && playlists.isNotEmpty) {
+                      return Scaffold(
+                        floatingActionButton: FloatingActionButton(
+                          child: Icon(Icons.add),
+                          onPressed: showAddPlaylistDialog,
+                        ),
+                        body: ListView(
+                          children: playlists
+                              .toList()
+                              .map((PlaylistInfo playlist) => ListTile(
+                                    leading: RoundedImage(
+                                      image: AssetImage(
+                                          Constants.defaultImagePath),
+                                      width: 30,
+                                      height: 30,
+                                    ),
+                                    title: Text(
+                                      playlist.name,
+                                      maxLines: 1,
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                      );
+                    }
+                    return Center(
+                      child: GestureDetector(
+                        onTap: showAddPlaylistDialog,
+                        child: Column(
+                          children: [
+                            IconButton(icon: Icon(Icons.add), onPressed: null),
+                            Text('Add a playlist here'),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
               // TODO: implement this
               Icon(Icons.directions_bike),
               FutureBuilder<List<GenreInfo>>(
@@ -363,51 +456,43 @@ class _HomeScreenState extends State<HomeScreen>
                     final genres =
                         searchResult as List<GenreInfo> ?? snapshot.data;
                     final random = Random();
-                    return StreamBuilder<SequenceState>(
-                        stream: player.sequenceStateStream,
-                        builder: (context, snapshot) {
-                          return GridView.count(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 5,
-                            mainAxisSpacing: 5,
-                            childAspectRatio: 1.3,
-                            children: genres?.map((GenreInfo genre) {
-                                  var genreImagePath =
-                                      Hive.box<String>(Constants.cachedGenres)
-                                          .get(
-                                    base64.encode(utf8.encode(genre.name)),
-                                  );
-                                  if (genreImagePath == null) {
-                                    genreImagePath = Constants.genreImagePaths[
-                                        random.nextInt(
-                                            Constants.genreImagePaths.length)];
-                                    Hive.box<String>(Constants.cachedGenres)
-                                        .put(
-                                            base64.encode(
-                                                utf8.encode(genre.name)),
-                                            genreImagePath);
-                                  }
-                                  return MyGridTile(
-                                    child: Column(
-                                      children: [
-                                        AspectRatio(
-                                          aspectRatio: 1.7,
-                                          child: Image(
-                                            image: AssetImage(genreImagePath),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        Text(
-                                          genre.name,
-                                          maxLines: 1,
-                                        )
-                                      ],
+                    return GridView.count(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 5,
+                      mainAxisSpacing: 5,
+                      childAspectRatio: 1.3,
+                      children: genres?.map((GenreInfo genre) {
+                            var genreImagePath =
+                                Hive.box<String>(Constants.cachedGenres).get(
+                              base64.encode(utf8.encode(genre.name)),
+                            );
+                            if (genreImagePath == null) {
+                              genreImagePath = Constants.genreImagePaths[random
+                                  .nextInt(Constants.genreImagePaths.length)];
+                              Hive.box<String>(Constants.cachedGenres).put(
+                                  base64.encode(utf8.encode(genre.name)),
+                                  genreImagePath);
+                            }
+                            return MyGridTile(
+                              child: Column(
+                                children: [
+                                  AspectRatio(
+                                    aspectRatio: 1.7,
+                                    child: Image(
+                                      image: AssetImage(genreImagePath),
+                                      fit: BoxFit.cover,
                                     ),
-                                  );
-                                })?.toList() ??
-                                [],
-                          );
-                        });
+                                  ),
+                                  Text(
+                                    genre.name,
+                                    maxLines: 1,
+                                  )
+                                ],
+                              ),
+                            );
+                          })?.toList() ??
+                          [],
+                    );
                   }),
             ]),
           ),
@@ -464,78 +549,150 @@ class MiniPlayer extends StatelessWidget {
       decoration: BoxDecoration(color: Theme.of(context).bottomAppBarColor),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: StreamBuilder<PlayerState>(
-            stream: player.playerStateStream,
+        // child: StreamBuilder<PlayerState>(
+        //     stream: player.playerStateStream,
+        //     builder: (context, snapshot) {
+        //       return StreamBuilder<SequenceState>(
+        //           stream: player.sequenceStateStream,
+        //           builder: (context, snapshot) {
+        //             final song = snapshot.data?.currentSource?.tag;
+        //             return Row(
+        //               children: [
+        //                 AspectRatio(
+        //                   aspectRatio: 1,
+        //                   child: RoundedImage(
+        //                     image: song?.isPodcast ?? false
+        //                         ? (song?.albumArtwork != null
+        //                             ? Image.network(song?.albumArtwork).image
+        //                             : AssetImage(Constants.defaultImagePath))
+        //                         : (song?.albumArtwork != null
+        //                             ? Image.file(File(song?.albumArtwork)).image
+        //                             : AssetImage(Constants.defaultImagePath)),
+        //                   ),
+        //                 ),
+        //                 VerticalDivider(
+        //                   thickness: 2,
+        //                 ),
+        //                 Expanded(
+        //                   child: Column(
+        //                     crossAxisAlignment: CrossAxisAlignment.start,
+        //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+        //                     children: [
+        //                       Text(
+        //                         song?.title ?? 'No song selected',
+        //                         style: TextStyle(
+        //                           fontSize: 20,
+        //                         ),
+        //                         overflow: TextOverflow.ellipsis,
+        //                       ),
+        //                       Text(
+        //                         song?.artist ?? 'Various artists',
+        //                         style: TextStyle(
+        //                           fontSize: 16,
+        //                           color:
+        //                               Theme.of(context).textTheme.caption.color,
+        //                         ),
+        //                         overflow: TextOverflow.ellipsis,
+        //                       ),
+        //                     ],
+        //                   ),
+        //                 ),
+        //                 VerticalDivider(
+        //                   thickness: 2,
+        //                 ),
+        //                 StreamBuilder<PlayerState>(
+        //                     stream: player.playerStateStream,
+        //                     builder: (context, snapshot) {
+        //                       if (snapshot.data?.playing ?? false) {
+        //                         return IconButton(
+        //                           onPressed: () {
+        //                             player.pause();
+        //                           },
+        //                           icon: Icon(FontAwesomeIcons.pause),
+        //                         );
+        //                       }
+        //                       return IconButton(
+        //                         onPressed: () {
+        //                           player.play();
+        //                         },
+        //                         icon: Icon(FontAwesomeIcons.play),
+        //                       );
+        //                     }),
+        //               ],
+        //             );
+        //           });
+        //     }),
+        child: StreamBuilder<MediaItem>(
+            stream: AudioService.currentMediaItemStream,
             builder: (context, snapshot) {
-              return StreamBuilder<SequenceState>(
-                  stream: player.sequenceStateStream,
-                  builder: (context, snapshot) {
-                    final song = snapshot.data?.currentSource?.tag;
-                    return Row(
+              final song = snapshot.data;
+              return Row(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: RoundedImage(
+                        // image: song?.extras['isPodcast'] ?? false
+                        //     ? (song?.artUri != null
+                        //         ? Image.network(song?.artUri).image
+                        //         : AssetImage(Constants.defaultImagePath))
+                        //     : (song?.artUri != null
+                        //         ? Image.file(File(song?.artUri)).image
+                        //         : AssetImage(Constants.defaultImagePath)),
+                        image: (song?.artUri != null
+                            ? ((song?.extras ?? {})['isOnline'] ?? false
+                                ? Image.network(song.artUri).image
+                                : Image.file(File(song.artUri)).image)
+                            : AssetImage(Constants.defaultImagePath))),
+                  ),
+                  VerticalDivider(
+                    thickness: 2,
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: RoundedImage(
-                            image: song?.isPodcast ?? false
-                                ? (song?.albumArtwork != null
-                                    ? Image.network(song?.albumArtwork).image
-                                    : AssetImage(Constants.defaultImagePath))
-                                : (song?.albumArtwork != null
-                                    ? Image.file(File(song?.albumArtwork)).image
-                                    : AssetImage(Constants.defaultImagePath)),
+                        Text(
+                          song?.title ?? 'No song selected',
+                          style: TextStyle(
+                            fontSize: 20,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        VerticalDivider(
-                          thickness: 2,
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Text(
-                                song?.title ?? 'No song selected',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                song?.artist ?? 'Various artists',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color:
-                                      Theme.of(context).textTheme.caption.color,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                        Text(
+                          song?.artist ?? 'Various artists',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Theme.of(context).textTheme.caption.color,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        VerticalDivider(
-                          thickness: 2,
-                        ),
-                        StreamBuilder<PlayerState>(
-                            stream: player.playerStateStream,
-                            builder: (context, snapshot) {
-                              if (snapshot.data?.playing ?? false) {
-                                return IconButton(
-                                  onPressed: () {
-                                    player.pause();
-                                  },
-                                  icon: Icon(FontAwesomeIcons.pause),
-                                );
-                              }
-                              return IconButton(
-                                onPressed: () {
-                                  player.play();
-                                },
-                                icon: Icon(FontAwesomeIcons.play),
-                              );
-                            }),
                       ],
-                    );
-                  });
+                    ),
+                  ),
+                  VerticalDivider(
+                    thickness: 2,
+                  ),
+                  StreamBuilder<PlaybackState>(
+                      stream: AudioService.playbackStateStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.data?.playing ?? false) {
+                          return IconButton(
+                            onPressed: () {
+                              AudioService.pause();
+                            },
+                            icon: Icon(FontAwesomeIcons.pause),
+                          );
+                        }
+                        return IconButton(
+                          onPressed: () {
+                            AudioService.play();
+                          },
+                          icon: Icon(FontAwesomeIcons.play),
+                        );
+                      }),
+                ],
+              );
             }),
       ),
     );
@@ -543,7 +700,7 @@ class MiniPlayer extends StatelessWidget {
 }
 
 class SongListTile extends StatelessWidget {
-  final SongInfo song;
+  final MediaItem song;
   final GestureTapCallback onTap;
   final bool selected;
   final bool draggable;
@@ -561,8 +718,8 @@ class SongListTile extends StatelessWidget {
     return ListTile(
       key: Key(song.id),
       leading: RoundedImage(
-        image: song?.albumArtwork != null
-            ? Image.file(File(song?.albumArtwork)).image
+        image: song.artUri != null
+            ? Image.file(File(song.artUri)).image
             : AssetImage(Constants.defaultImagePath),
         width: 50,
         height: 50,
@@ -585,7 +742,7 @@ class SongListTile extends StatelessWidget {
           children: [
             Text(
               getFormattedDuration(
-                Duration(milliseconds: int.parse(song.duration)),
+                song.duration,
                 timeFormat: TimeFormat.optionalHoursMinutes0Seconds,
               ),
             ),
