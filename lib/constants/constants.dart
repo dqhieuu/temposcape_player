@@ -15,4 +15,4 @@ const genreImagePaths = [
 
 const cachedArtists = 'cachedArtists';
 const cachedGenres = 'cachedGenres';
-const favoritePlaylist = '__internal_playlist_favorites__';
+const favoritesPlaylist = '__internal_playlist_favorites__';

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
@@ -40,6 +41,17 @@ class _HomeScreenState extends State<HomeScreen>
   final FlutterAudioQuery audioQuery = FlutterAudioQuery();
 
   List<dynamic> searchResult;
+
+  _HomeScreenState() {
+    audioQuery.getPlaylists().then((playlists) {
+      if (playlists
+          .where((playlist) => playlist.name == Constants.favoritesPlaylist)
+          .isEmpty) {
+        FlutterAudioQuery.createPlaylist(
+            playlistName: Constants.favoritesPlaylist);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -419,6 +431,8 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         body: ListView(
                           children: playlists
+                              .where((playlist) =>
+                                  playlist.name != Constants.favoritesPlaylist)
                               .toList()
                               .map((PlaylistInfo playlist) => ListTile(
                                     leading: RoundedImage(
@@ -640,8 +654,9 @@ class MiniPlayer extends StatelessWidget {
                         //         : AssetImage(Constants.defaultImagePath)),
                         image: (song?.artUri != null
                             ? ((song?.extras ?? {})['isOnline'] ?? false
-                                ? Image.network(song.artUri).image
-                                : Image.file(File(song.artUri)).image)
+                                ? CachedNetworkImageProvider(song.artUri)
+                                : Image.file(File(Uri.parse(song.artUri).path))
+                                    .image)
                             : AssetImage(Constants.defaultImagePath))),
                   ),
                   VerticalDivider(
@@ -718,8 +733,10 @@ class SongListTile extends StatelessWidget {
     return ListTile(
       key: Key(song.id),
       leading: RoundedImage(
-        image: song.artUri != null
-            ? Image.file(File(song.artUri)).image
+        image: song?.artUri != null
+            ? ((song?.extras ?? {})['isOnline'] ?? false
+                ? CachedNetworkImageProvider(song.artUri)
+                : Image.file(File(Uri.parse(song.artUri).path)).image)
             : AssetImage(Constants.defaultImagePath),
         width: 50,
         height: 50,
@@ -740,12 +757,13 @@ class SongListTile extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              getFormattedDuration(
-                song.duration,
-                timeFormat: TimeFormat.optionalHoursMinutes0Seconds,
+            if (song.duration != null)
+              Text(
+                getFormattedDuration(
+                  song.duration,
+                  timeFormat: TimeFormat.optionalHoursMinutes0Seconds,
+                ),
               ),
-            ),
             if (draggable)
               Container(
                 child: Icon(

@@ -106,7 +106,9 @@ MediaItem songInfoToMediaItem(SongInfo songInfo) => MediaItem(
       artist: songInfo.artist,
 // this.genre,
       duration: Duration(milliseconds: int.parse(songInfo.duration)),
-      artUri: songInfo.albumArtwork,
+      artUri: songInfo.albumArtwork != null
+          ? Uri.file(songInfo.albumArtwork).toString()
+          : null,
 // this.playable = true,
       displayTitle: songInfo.title,
       displaySubtitle: songInfo.artist,

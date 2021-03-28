@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ext_storage/ext_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,19 +34,30 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
     }
   }
 
-  void _downloadMusicToPhone(String url, String title) async {
-    if (url == null || !url.startsWith('http')) return;
-    print(url);
+  Future<void> _downloadMusicToPhone(
+      BuildContext context, String url, String title) async {
+    if (url == null || !url.startsWith('http')) {
+      final snackBar = SnackBar(content: Text('Cannot download this song.'));
 
-    // Example: [Temposcape] Song name_180000000.mp3
+      Scaffold.of(context).showSnackBar(snackBar);
+      return;
+    }
+
+    // Example: [Temposcape] Song name_1612315612.mp3
     final file = File(
         ('${await ExtStorage.getExternalStoragePublicDirectory(ExtStorage.DIRECTORY_MUSIC)}'
             '/[${Constants.appName}] '
             '${title?.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '-') ?? ''}'
             '_${DateTime.now().millisecondsSinceEpoch}.mp3'));
-    print(file.path);
+
     file.writeAsBytesSync((await http.get(url)).bodyBytes);
     await _refreshMediaStore(file.path);
+
+    final snackBar = SnackBar(
+        content: Text(
+            'Successfully downloaded ${title.length <= 20 ? title : title + '...'}.mp3.'));
+
+    Scaffold.of(context).showSnackBar(snackBar);
   }
 
   @override
@@ -94,7 +106,8 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                                 onPressed: () async {
                                   final mediaItem =
                                       AudioService.currentMediaItem;
-                                  _downloadMusicToPhone(
+                                  await _downloadMusicToPhone(
+                                      context,
                                       (mediaItem?.extras ?? {})['uri'],
                                       mediaItem?.title);
                                 })
@@ -131,8 +144,8 @@ class PlayerSongInfo extends StatelessWidget {
         CircleAvatar(
           backgroundImage: (song?.artUri != null
               ? ((song?.extras ?? {})['isOnline'] ?? false
-                  ? Image.network(song.artUri).image
-                  : Image.file(File(song.artUri)).image)
+                  ? CachedNetworkImageProvider(song.artUri)
+                  : Image.file(File(Uri.parse(song.artUri).path)).image)
               : AssetImage(Constants.defaultImagePath)),
           radius: 120,
         ),

@@ -99,6 +99,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
   @override
   Future<void> onUpdateQueue(List<MediaItem> queue) async {
     await AudioServiceBackground.setQueue(queue);
+    _queue = queue;
     _audioSource = ConcatenatingAudioSource(
       children: AudioServiceBackground.queue
           .map((e) => AudioSource.uri(
@@ -147,6 +148,17 @@ class AudioPlayerTask extends BackgroundAudioTask {
     _player.currentIndexStream.listen((index) {
       if (index == null || index < 0) return null;
       AudioServiceBackground.setMediaItem(_queue[index]);
+    });
+
+    _player.durationStream.listen((duration) async {
+      if (duration == null) return;
+      MediaItem media = _player.sequenceState.currentSource.tag;
+      final uri = media.extras['uri'];
+      if (uri != null && media.duration == null) {
+        final modifiedMedia = media.copyWith(duration: duration);
+        await AudioServiceBackground.setQueue([modifiedMedia]);
+        AudioServiceBackground.setMediaItem(modifiedMedia);
+      }
     });
 
     _player.positionStream.listen((position) {
