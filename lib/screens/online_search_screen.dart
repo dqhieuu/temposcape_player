@@ -4,16 +4,12 @@ import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:temposcape_player/plugins/chiasenhac_plugin.dart';
-import 'package:temposcape_player/plugins/nhaccuatui_plugin.dart';
-import 'package:temposcape_player/plugins/player_plugins.dart';
-import 'package:temposcape_player/plugins/soundcloud_plugin.dart';
-import 'package:temposcape_player/plugins/zingmp3_plugin.dart';
-import 'package:temposcape_player/screens/main_player_screen.dart';
+import 'package:temposcape_player/plugins/plugins.dart';
 import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
+import 'main_player_screen.dart';
 
 class OnlineSearchScreen extends StatefulWidget {
   @override
@@ -121,7 +117,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
 
       double maxScroll = _scrollController.position.maxScrollExtent;
       double currentScroll = _scrollController.position.pixels;
-      const delta = 20.0;
+      const delta = 50.0;
 
       if (maxScroll - currentScroll <= delta) {
         _page++;
@@ -142,46 +138,50 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Online song plugins'),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(120),
-          child: Container(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Column(
-              children: [
-                DropdownButton(
-                  items: _plugins.map((e) {
-                    return DropdownMenuItem(value: e, child: Text(e.title));
-                  }).toList(),
-                  isExpanded: true,
-                  onChanged: (BasePlayerPlugin selectedPlugin) {
-                    setState(() {
-                      _currentPlugin = selectedPlugin;
-                      _setListAccordingToText();
-                    });
-                  },
-                  value: _currentPlugin,
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: <Widget>[
+          SliverAppBar(
+            pinned: true,
+            snap: true,
+            floating: true,
+            expandedHeight: 155.0,
+            title: Text('Online song plugins'),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Column(
+                  children: [
+                    Spacer(),
+                    DropdownButton(
+                      items: _plugins.map((e) {
+                        return DropdownMenuItem(value: e, child: Text(e.title));
+                      }).toList(),
+                      isExpanded: true,
+                      onChanged: (BasePlayerPlugin selectedPlugin) {
+                        setState(() {
+                          _currentPlugin = selectedPlugin;
+                          _setListAccordingToText();
+                        });
+                      },
+                      value: _currentPlugin,
+                    ),
+                    TextField(
+                      onChanged: (value) {
+                        _searchValue = value;
+                        if (_debounce?.isActive ?? false) _debounce.cancel();
+                        _debounce = Timer(const Duration(milliseconds: 300),
+                            _setListAccordingToText);
+                      },
+                    ),
+                  ],
                 ),
-                TextField(
-                  onChanged: (value) {
-                    _searchValue = value;
-                    if (_debounce?.isActive ?? false) _debounce.cancel();
-                    _debounce = Timer(const Duration(milliseconds: 300),
-                        _setListAccordingToText);
-                  },
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              controller: _scrollController,
-              children: _list
+          SliverList(
+            delegate: SliverChildListDelegate(
+              _list
                       ?.map((OnlineSong song) => OnlineSongListTile(
                             song: song,
                             onTap: () async {

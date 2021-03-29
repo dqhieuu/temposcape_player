@@ -10,8 +10,7 @@ import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_search_bar/flutter_search_bar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:provider/provider.dart';
+import 'package:temposcape_player/screens/albums_screen.dart';
 import 'package:temposcape_player/screens/online_search_screen.dart';
 import 'package:temposcape_player/screens/song_queue_screen.dart';
 import 'package:temposcape_player/utils/utils.dart';
@@ -56,7 +55,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    Hive.box<String>(Constants.cachedArtists).clear();
     _tabController = TabController(vsync: this, length: myTabs.length);
     _searchBar = new SearchBar(
       // TODO: fix bugs, this has bugs, don't know why
@@ -181,7 +179,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final player = context.read<AudioPlayer>();
     return Scaffold(
       appBar: _searchBar.build(context),
       resizeToAvoidBottomInset: false,
@@ -327,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen>
                                         ? Image.file(File(album.albumArt))
                                         : Image(
                                             image: AssetImage(
-                                                Constants.defaultImagePath),
+                                                Constants.defaultAlbumPath),
                                           ),
                                     Text(
                                       album.title,
@@ -336,6 +333,14 @@ class _HomeScreenState extends State<HomeScreen>
                                     )
                                   ],
                                 ),
+                                onTap: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => AlbumScreen(
+                                                albumInput: album,
+                                              )));
+                                },
                               );
                             })?.toList() ??
                             [],
@@ -347,7 +352,6 @@ class _HomeScreenState extends State<HomeScreen>
                   builder: (context, snapshot) {
                     final artists =
                         searchResult as List<ArtistInfo> ?? snapshot.data;
-                    Hive.box<String>(Constants.cachedArtists).clear();
                     return GridView.count(
                       crossAxisCount: 3,
                       crossAxisSpacing: 5,
@@ -517,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen>
                 MaterialPageRoute(builder: (context) => MainPlayerScreen()),
               );
             },
-            child: MiniPlayer(player: player),
+            child: MiniPlayer(),
           ),
         ],
       ),
@@ -542,7 +546,7 @@ class MyGridTile extends StatelessWidget {
           child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: onTap ?? () {},
         ),
       )),
     ]);
@@ -550,12 +554,6 @@ class MyGridTile extends StatelessWidget {
 }
 
 class MiniPlayer extends StatelessWidget {
-  final AudioPlayer player;
-  const MiniPlayer({
-    this.player,
-    Key key,
-  }) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return Container(
