@@ -63,6 +63,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   int _page = 1;
   String _searchValue = '';
   bool _hasReachedEnd = false;
+  bool _havingBlockingTask = false;
 
   final _plugins = <BasePlayerPlugin>[
     ChiaSeNhacPlugin(),
@@ -185,8 +186,16 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                       ?.map((OnlineSong song) => OnlineSongListTile(
                             song: song,
                             onTap: () async {
+                              if (_havingBlockingTask) return;
+                              _havingBlockingTask = true;
                               final songUrl = await song.songUrl();
+                              _havingBlockingTask = false;
                               if (songUrl == null || songUrl.isEmpty) return;
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          MainPlayerScreen()));
                               await AudioService.updateQueue(<MediaItem>[
                                 MediaItem(
                                   id: song.id,
@@ -202,11 +211,6 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                                 ),
                               ]);
                               AudioService.play();
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          MainPlayerScreen()));
                             },
                           ))
                       ?.toList() ??

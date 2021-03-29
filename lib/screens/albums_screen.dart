@@ -76,27 +76,30 @@ class _AlbumScreenState extends State<AlbumScreen> {
                             width: 160,
                             height: 160,
                           ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.albumInput.title,
-                                maxLines: 2,
-                              ),
-                              Text(
-                                widget.albumInput.artist,
-                                maxLines: 1,
-                              ),
-                            ],
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.albumInput.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  widget.albumInput.artist,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           )
                         ],
                       ),
                     ),
                   )
                 ],
-                overflow: Overflow.visible,
               ),
             ),
             FutureBuilder<lastfm.Album>(
@@ -113,7 +116,6 @@ class _AlbumScreenState extends State<AlbumScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Release date: ${album.url}'),
                           Text('Listener count: ${album.listeners}'),
                           Text('Play count: ${album.playCount}'),
                         ],
@@ -122,7 +124,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                   }
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text('Info'),
+                    child: Text('No Info'),
                   );
                 }),
             FutureBuilder<List<SongInfo>>(
@@ -137,17 +139,17 @@ class _AlbumScreenState extends State<AlbumScreen> {
                               ?.map((MediaItem song) => SongListTile(
                                     song: song,
                                     onTap: () async {
-                                      await AudioService.updateQueue(
-                                          songs.toList());
-                                      await AudioService.skipToQueueItem(
-                                          song.id);
-                                      AudioService.play();
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
                                                 MainPlayerScreen()),
                                       );
+                                      await AudioService.updateQueue(
+                                          songs.toList());
+                                      await AudioService.skipToQueueItem(
+                                          song.id);
+                                      AudioService.play();
                                     },
                                     // selected:
                                     //     (snapshot.data?.currentSource?.tag)

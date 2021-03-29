@@ -8,6 +8,7 @@ import 'package:ext_storage/ext_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -23,6 +24,8 @@ class MainPlayerScreen extends StatefulWidget {
 
 class _MainPlayerScreenState extends State<MainPlayerScreen> {
   static const platform = const MethodChannel('temposcape.flutter/refresh');
+
+  final audioQuery = FlutterAudioQuery();
 
   Future<void> _refreshMediaStore(String path) async {
     try {
@@ -111,7 +114,35 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                                       (mediaItem?.extras ?? {})['uri'],
                                       mediaItem?.title);
                                 })
-                            : Container();
+                            : IconButton(
+                                icon: Icon(Icons.favorite),
+                                onPressed: () async {
+                                  final favoritesPlaylist =
+                                      (await audioQuery.getPlaylists())
+                                          ?.where((element) =>
+                                              element.name ==
+                                              Constants.favoritesPlaylist)
+                                          ?.first;
+                                  if (favoritesPlaylist == null ||
+                                      snapshot.data == null) return;
+                                  final currentSongTypeCasted =
+                                      mediaItemToSongInfo(snapshot.data);
+                                  bool hasCurrentSong =
+                                      (await audioQuery.getSongsFromPlaylist(
+                                              playlist: favoritesPlaylist))
+                                          .any((element) =>
+                                              element.id ==
+                                              currentSongTypeCasted.id);
+                                  if (hasCurrentSong) {
+                                    print('hasCurrentSong');
+                                    favoritesPlaylist.removeSong(
+                                        song: currentSongTypeCasted);
+                                  } else {
+                                    favoritesPlaylist.addSong(
+                                        song: currentSongTypeCasted);
+                                    print('nothascurrentsong');
+                                  }
+                                });
                       }),
                   IconButton(
                       icon: Icon(Icons.queue_music),

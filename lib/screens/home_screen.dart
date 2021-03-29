@@ -233,74 +233,32 @@ class _HomeScreenState extends State<HomeScreen>
                         ?.toList();
                     final songs = searchResult as List<SongInfo> ??
                         allSongsWithoutSystemMusic;
-                    // return StreamBuilder<SequenceState>(
-                    //     stream: player.sequenceStateStream,
-                    //     builder: (context, snapshot) {
-                    //       final audioSource = songs
-                    //           ?.map((e) =>
-                    //               AudioSource.uri(Uri.file(e.filePath), tag: e))
-                    //           ?.toList();
-                    //       return ListView(
-                    //         children: songs
-                    //                 ?.toList()
-                    //                 ?.map((SongInfo song) => SongListTile(
-                    //                       song: song,
-                    //                       onTap: () async {
-                    //                         // TODO: optimize this
-                    //                         // await player.setAudioSource(
-                    //                         //     ProgressiveAudioSource(
-                    //                         //         Uri.file(song.filePath),
-                    //                         //         tag: song));
-                    //                         // player.play();
-                    //                         await player.setAudioSource(
-                    //                             ConcatenatingAudioSource(
-                    //                                 children: audioSource));
-                    //                         await player.seek(Duration.zero,
-                    //                             index: songs.indexOf(song));
-                    //                         player.play();
-                    //                         Navigator.push(
-                    //                           context,
-                    //                           MaterialPageRoute(
-                    //                               builder: (context) =>
-                    //                                   MainPlayerScreen()),
-                    //                         );
-                    //                       },
-                    //                       selected: (snapshot
-                    //                                   .data?.currentSource?.tag)
-                    //                               ?.filePath ==
-                    //                           song.filePath,
-                    //                     ))
-                    //                 ?.toList() ??
-                    //             [],
-                    //       );
-                    //     });
+                    if (songs == null) {
+                      return Container();
+                    }
                     return ListView(
-                      children: songs
-                              ?.toList()
-                              ?.map((SongInfo song) => SongListTile(
-                                    song: songInfoToMediaItem(song),
-                                    onTap: () async {
-                                      await AudioService.updateQueue(songs
-                                          .map(songInfoToMediaItem)
-                                          .toList());
-                                      await AudioService.skipToQueueItem(
-                                          song.id);
-                                      AudioService.play();
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                MainPlayerScreen()),
-                                      );
-                                    },
-                                    // selected:
-                                    //     (snapshot.data?.currentSource?.tag)
-                                    //             ?.filePath ==
-                                    //         song.filePath,
-                                  ))
-                              ?.toList() ??
-                          [],
-                    );
+                        children: songs
+                            .map((SongInfo song) => SongListTile(
+                                  song: songInfoToMediaItem(song),
+                                  onTap: () async {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              MainPlayerScreen()),
+                                    );
+                                    await AudioService.updateQueue(songs
+                                        .map(songInfoToMediaItem)
+                                        .toList());
+                                    await AudioService.skipToQueueItem(song.id);
+                                    AudioService.play();
+                                  },
+                                  // selected:
+                                  //     (snapshot.data?.currentSource?.tag)
+                                  //             ?.filePath ==
+                                  //         song.filePath,
+                                ))
+                            .toList());
                   }),
               FutureBuilder<List<AlbumInfo>>(
                   future: audioQuery.getAlbums(),
@@ -358,56 +316,20 @@ class _HomeScreenState extends State<HomeScreen>
                       mainAxisSpacing: 5,
                       childAspectRatio: 0.55,
                       children: artists?.map((ArtistInfo artist) {
-                            // return FutureBuilder<lastFm.Artist>(
-                            //   future: scrobblenaut
-                            //       .Scrobblenaut.instance.artist
-                            //       .getInfo(artist: artist.name),
-                            //   builder: (context, snapshot) {
-                            //     String dbArtistArtUrl = Hive.box<String>(
-                            //             Constants.cachedArtists)
-                            //         .get(base64.encode(
-                            //             utf8.encode(artist.name)));
-                            //     if (dbArtistArtUrl == null) {
-                            //       print('this');
-                            //       final lastFmArtistArtUrl =
-                            //           snapshot.data?.images?.last?.text;
-                            //       dbArtistArtUrl =
-                            //           lastFmArtistArtUrl ?? '';
-                            //       print(dbArtistArtUrl);
-                            //       Hive.box<String>(
-                            //               Constants.cachedArtists)
-                            //           .put(
-                            //               base64.encode(
-                            //                   utf8.encode(artist.name)),
-                            //               dbArtistArtUrl);
-                            //     }
                             return MyGridTile(
                               child: Column(children: [
                                 AspectRatio(
                                   aspectRatio: 0.7,
-                                  child:
-                                      // dbArtistArtUrl.isNotEmpty
-                                      //     ? CachedNetworkImage(
-                                      //         imageUrl: dbArtistArtUrl,
-                                      //         placeholder: (context,
-                                      //                 url) =>
-                                      //             CircularProgressIndicator(),
-                                      //         errorWidget:
-                                      //             (context, url, error) =>
-                                      //                 Icon(Icons.error),
-                                      //         fit: BoxFit.cover,
-                                      //       )
-                                      //     :
-                                      artist?.artistArtPath != null
-                                          ? Image.file(
-                                              File(artist.artistArtPath),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Image(
-                                              image: AssetImage(
-                                                  Constants.defaultImagePath),
-                                              fit: BoxFit.cover,
-                                            ),
+                                  child: artist?.artistArtPath != null
+                                      ? Image.file(
+                                          File(artist.artistArtPath),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image(
+                                          image: AssetImage(
+                                              Constants.defaultImagePath),
+                                          fit: BoxFit.cover,
+                                        ),
                                 ),
                                 Text(
                                   artist.name,
@@ -416,8 +338,6 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               ]),
                             );
-                            // },
-                            // );
                           })?.toList() ??
                           [],
                     );
@@ -466,8 +386,55 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     );
                   }),
-              // TODO: implement this
-              Icon(Icons.directions_bike),
+              FutureBuilder<List<PlaylistInfo>>(
+                  future: audioQuery.getPlaylists(),
+                  builder: (context, snapshot) {
+                    final favoritesPlaylist = snapshot.data
+                        ?.where((element) =>
+                            element.name == Constants.favoritesPlaylist)
+                        ?.first;
+                    if (favoritesPlaylist == null) {
+                      return Container();
+                    }
+                    return FutureBuilder<List<SongInfo>>(
+                        future: audioQuery.getSongsFromPlaylist(
+                            playlist: favoritesPlaylist),
+                        builder: (context, snapshot) {
+                          final allSongsWithoutSystemMusic = snapshot.data
+                              ?.where((song) =>
+                                  !song.filePath.contains(r'/Android/media/'))
+                              ?.toList();
+                          final songs = searchResult as List<SongInfo> ??
+                              allSongsWithoutSystemMusic;
+                          if (songs == null) {
+                            return Container();
+                          }
+                          return ListView(
+                              children: songs
+                                  .map((SongInfo song) => SongListTile(
+                                        song: songInfoToMediaItem(song),
+                                        onTap: () async {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    MainPlayerScreen()),
+                                          );
+                                          await AudioService.updateQueue(songs
+                                              .map(songInfoToMediaItem)
+                                              .toList());
+                                          await AudioService.skipToQueueItem(
+                                              song.id);
+                                          AudioService.play();
+                                        },
+                                        // selected:
+                                        //     (snapshot.data?.currentSource?.tag)
+                                        //             ?.filePath ==
+                                        //         song.filePath,
+                                      ))
+                                  .toList());
+                        });
+                  }),
               FutureBuilder<List<GenreInfo>>(
                   future: audioQuery.getGenres(),
                   builder: (context, snapshot) {

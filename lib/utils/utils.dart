@@ -133,3 +133,31 @@ MediaItem songInfoToMediaItem(SongInfo songInfo) => MediaItem(
         isOnline: false,
       ).toMap(),
     );
+
+SongInfo mediaItemToSongInfo(MediaItem mediaItem) {
+  var returnSong = SongInfo(
+    albumId: mediaItem.extras['albumId'],
+    artistId: mediaItem.extras['artistId'],
+    artist: mediaItem.artist,
+    album: mediaItem.album,
+    title: mediaItem.title,
+    displayName: mediaItem.extras['displayName'],
+    composer: mediaItem.extras['composer'],
+    year: mediaItem.extras['year'],
+    track: mediaItem.extras['track'],
+    duration: mediaItem.duration.inMilliseconds.toString(),
+    bookmark: mediaItem.extras['bookmark'],
+    filePath: mediaItem.extras['filePath'],
+    uri: mediaItem.extras['uri'],
+    fileSize: mediaItem.extras['fileSize'],
+    albumArtwork:
+        mediaItem.artUri != null ? Uri.parse(mediaItem.artUri).path : null,
+    isMusic: mediaItem.extras['isMusic'],
+    isPodcast: mediaItem.extras['isPodcast'],
+    isRingtone: mediaItem.extras['isRingtone'],
+    isAlarm: mediaItem.extras['isAlarm'],
+    isNotification: mediaItem.extras['isNotification'],
+  );
+  returnSong.id = mediaItem.id;
+  return returnSong;
+}
