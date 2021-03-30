@@ -3,13 +3,13 @@ import 'dart:ui';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:scrobblenaut/scrobblenaut.dart';
+import 'package:temposcape_player/models/artist_cache.dart';
 import 'package:temposcape_player/screens/home_screen.dart';
 
 import 'constants/constants.dart' as Constants;
@@ -17,8 +17,9 @@ import 'screens/home_screen.dart';
 
 void main() async {
   await Hive.initFlutter();
-  await Hive.openBox<String>(Constants.cachedArtists);
-  await Hive.openBox<String>(Constants.cachedGenres);
+  Hive.registerAdapter(ArtistCacheAdapter());
+  await Hive.openBox<ArtistCache>(ArtistCache.hiveBox);
+  Hive.openBox<String>(Constants.cachedGenres);
   runApp(MyApp());
 }
 
@@ -193,7 +194,7 @@ class _MyAppState extends State<MyApp> {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         localizationsDelegates: [
-          AppLocalizations.delegate,
+          // AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,

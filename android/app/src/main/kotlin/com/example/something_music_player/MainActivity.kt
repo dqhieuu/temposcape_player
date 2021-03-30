@@ -13,7 +13,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             if (call.method == "refreshMediaStore") {
-                val refresh = refreshMediaStore(call.argument<String>("path"))
+                val refresh = refreshMediaStore(call.argument<List<String>>("path"))
                 result.success(refresh)
             } else {
                 result.notImplemented()
@@ -22,8 +22,8 @@ class MainActivity : FlutterActivity() {
     }
 
 
-    private fun refreshMediaStore(fileDir: String?): String? {
-        MediaScannerConnection.scanFile(context, arrayOf(fileDir),
+    private fun refreshMediaStore(fileDir: List<String>?): List<String>? {
+        MediaScannerConnection.scanFile(context, fileDir?.toTypedArray(),
                 arrayOf("music"), null)
 
         return fileDir

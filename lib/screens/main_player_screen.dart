@@ -27,9 +27,9 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
 
   final audioQuery = FlutterAudioQuery();
 
-  Future<void> _refreshMediaStore(String path) async {
+  Future<void> _refreshMediaStore(List<String> path) async {
     try {
-      final String result =
+      final List<dynamic> result =
           await platform.invokeMethod('refreshMediaStore', {'path': path});
       print(result);
     } on PlatformException catch (e) {
@@ -54,7 +54,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
             '_${DateTime.now().millisecondsSinceEpoch}.mp3'));
 
     file.writeAsBytesSync((await http.get(url)).bodyBytes);
-    await _refreshMediaStore(file.path);
+    await _refreshMediaStore([file.path]);
 
     final snackBar = SnackBar(
         content: Text(
@@ -114,34 +114,51 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                                       (mediaItem?.extras ?? {})['uri'],
                                       mediaItem?.title);
                                 })
-                            : IconButton(
-                                icon: Icon(Icons.favorite),
-                                onPressed: () async {
-                                  final favoritesPlaylist =
-                                      (await audioQuery.getPlaylists())
-                                          ?.where((element) =>
-                                              element.name ==
-                                              Constants.favoritesPlaylist)
-                                          ?.first;
-                                  if (favoritesPlaylist == null ||
-                                      snapshot.data == null) return;
-                                  final currentSongTypeCasted =
-                                      mediaItemToSongInfo(snapshot.data);
-                                  bool hasCurrentSong =
-                                      (await audioQuery.getSongsFromPlaylist(
-                                              playlist: favoritesPlaylist))
-                                          .any((element) =>
-                                              element.id ==
-                                              currentSongTypeCasted.id);
-                                  if (hasCurrentSong) {
-                                    print('hasCurrentSong');
-                                    favoritesPlaylist.removeSong(
-                                        song: currentSongTypeCasted);
-                                  } else {
-                                    favoritesPlaylist.addSong(
-                                        song: currentSongTypeCasted);
-                                    print('nothascurrentsong');
-                                  }
+                            : FutureBuilder<List<PlaylistInfo>>(
+                                future: audioQuery.getPlaylists(),
+                                builder: (context, snapshot) {
+                                  final favoritesPlaylist = snapshot.data
+                                      ?.where((element) =>
+                                          element.name ==
+                                          Constants.favoritesPlaylist)
+                                      ?.first;
+                                  if (favoritesPlaylist == null)
+                                    return Container();
+                                  return FutureBuilder<List<SongInfo>>(
+                                      future: audioQuery.getSongsFromPlaylist(
+                                          playlist: favoritesPlaylist),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.data == null)
+                                          return Container();
+                                        final currentSongTypeCasted =
+                                            AudioService.currentMediaItem !=
+                                                    null
+                                                ? mediaItemToSongInfo(
+                                                    AudioService
+                                                        .currentMediaItem)
+                                                : null;
+                                        bool hasCurrentSong = snapshot.data.any(
+                                            (element) =>
+                                                element.id ==
+                                                currentSongTypeCasted.id);
+                                        if (hasCurrentSong) {
+                                          return IconButton(
+                                              icon: Icon(Icons.favorite),
+                                              onPressed: () async {
+                                                await favoritesPlaylist.removeSong(
+                                                    song:
+                                                        currentSongTypeCasted);
+                                                setState(() {});
+                                              });
+                                        }
+                                        return IconButton(
+                                            icon: Icon(Icons.favorite_border),
+                                            onPressed: () async {
+                                              await favoritesPlaylist.addSong(
+                                                  song: currentSongTypeCasted);
+                                              setState(() {});
+                                            });
+                                      });
                                 });
                       }),
                   IconButton(
@@ -277,77 +294,6 @@ class PlayerControlBar extends StatelessWidget {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              //   StreamBuilder<bool>(
-              //       stream: player.shuffleModeEnabledStream,
-              //       builder: (context, snapshot) {
-              //         final shuffleModeEnabled = snapshot.data ?? false;
-              //         return IconButton(
-              //           icon: Icon(shuffleModeEnabled
-              //               ? MdiIcons.shuffle
-              //               : MdiIcons.shuffleDisabled),
-              //           onPressed: () {
-              //             player.setShuffleModeEnabled(!shuffleModeEnabled);
-              //           },
-              //         );
-              //       }),
-              //   IconButton(
-              //     onPressed: () {
-              //       player.seekToPrevious();
-              //     },
-              //     icon: Icon(FontAwesomeIcons.backward),
-              //   ),
-              //   StreamBuilder<PlayerState>(
-              //       stream: player.playerStateStream,
-              //       builder: (context, snapshot) {
-              //         if (snapshot.data?.playing ?? false) {
-              //           return IconButton(
-              //             onPressed: () {
-              //               player.pause();
-              //             },
-              //             icon: Icon(FontAwesomeIcons.pause),
-              //           );
-              //         }
-              //         return IconButton(
-              //           onPressed: () {
-              //             player.play();
-              //           },
-              //           icon: Icon(FontAwesomeIcons.play),
-              //         );
-              //       }),
-              //   IconButton(
-              //     onPressed: () {
-              //       player.seekToNext();
-              //     },
-              //     icon: Icon(FontAwesomeIcons.forward),
-              //   ),
-              //   StreamBuilder<LoopMode>(
-              //       stream: player.loopModeStream,
-              //       builder: (context, snapshot) {
-              //         if (snapshot.data == LoopMode.off) {
-              //           return IconButton(
-              //             onPressed: () {
-              //               player.setLoopMode(LoopMode.all);
-              //             },
-              //             icon: Icon(
-              //               MdiIcons.repeatOff,
-              //             ),
-              //           );
-              //         } else if (snapshot.data == LoopMode.one) {
-              //           return IconButton(
-              //             onPressed: () {
-              //               player.setLoopMode(LoopMode.off);
-              //             },
-              //             icon: Icon(Icons.repeat_one),
-              //           );
-              //         }
-              //         return IconButton(
-              //           onPressed: () {
-              //             player.setLoopMode(LoopMode.one);
-              //           },
-              //           icon: const Icon(Icons.repeat),
-              //         );
-              //       }),
-
               IconButton(
                 icon: Icon(shuffleMode == AudioServiceShuffleMode.all
                     ? MdiIcons.shuffle

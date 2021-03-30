@@ -11,6 +11,7 @@ import 'package:flutter_search_bar/flutter_search_bar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
 import 'package:temposcape_player/screens/albums_screen.dart';
+import 'package:temposcape_player/screens/artists_screen.dart';
 import 'package:temposcape_player/screens/online_search_screen.dart';
 import 'package:temposcape_player/screens/song_queue_screen.dart';
 import 'package:temposcape_player/utils/utils.dart';
@@ -58,7 +59,6 @@ class _HomeScreenState extends State<HomeScreen>
     _tabController = TabController(vsync: this, length: myTabs.length);
     _searchBar = new SearchBar(
       // TODO: fix bugs, this has bugs, don't know why
-      inBar: true,
       setState: setState,
       buildDefaultAppBar: buildAppBar,
       onChanged: (String value) async {
@@ -80,16 +80,15 @@ class _HomeScreenState extends State<HomeScreen>
             break;
         }
       },
-      onClosed: () {
-        searchResult = null;
-      },
+      onClosed: _clearSearchResult,
+      onCleared: _clearSearchResult,
     );
     _tabController.addListener(() {
-      clearSearchResult();
+      _clearSearchResult();
     });
   }
 
-  void clearSearchResult() {
+  void _clearSearchResult() {
     searchResult = null;
   }
 
@@ -132,7 +131,10 @@ class _HomeScreenState extends State<HomeScreen>
   AppBar buildAppBar(BuildContext context) {
     return AppBar(
       title: Text(Constants.appName),
-      actions: [_searchBar.getSearchAction(context)],
+      actions: [
+        _searchBar.getSearchAction(context),
+        IconButton(icon: Icon(Icons.more_vert)),
+      ],
       bottom: TabBar(
         controller: _tabController,
         isScrollable: true,
@@ -337,6 +339,13 @@ class _HomeScreenState extends State<HomeScreen>
                                   maxLines: 2,
                                 ),
                               ]),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ArtistScreen(artistInput: artist)));
+                              },
                             );
                           })?.toList() ??
                           [],
@@ -346,7 +355,8 @@ class _HomeScreenState extends State<HomeScreen>
               FutureBuilder<List<PlaylistInfo>>(
                   future: audioQuery.getPlaylists(),
                   builder: (context, snapshot) {
-                    final playlists = snapshot.data?.toList();
+                    final playlists =
+                        searchResult as List<PlaylistInfo> ?? snapshot.data;
                     if (playlists != null && playlists.isNotEmpty) {
                       return Scaffold(
                         floatingActionButton: FloatingActionButton(
@@ -528,79 +538,6 @@ class MiniPlayer extends StatelessWidget {
       decoration: BoxDecoration(color: Theme.of(context).bottomAppBarColor),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        // child: StreamBuilder<PlayerState>(
-        //     stream: player.playerStateStream,
-        //     builder: (context, snapshot) {
-        //       return StreamBuilder<SequenceState>(
-        //           stream: player.sequenceStateStream,
-        //           builder: (context, snapshot) {
-        //             final song = snapshot.data?.currentSource?.tag;
-        //             return Row(
-        //               children: [
-        //                 AspectRatio(
-        //                   aspectRatio: 1,
-        //                   child: RoundedImage(
-        //                     image: song?.isPodcast ?? false
-        //                         ? (song?.albumArtwork != null
-        //                             ? Image.network(song?.albumArtwork).image
-        //                             : AssetImage(Constants.defaultImagePath))
-        //                         : (song?.albumArtwork != null
-        //                             ? Image.file(File(song?.albumArtwork)).image
-        //                             : AssetImage(Constants.defaultImagePath)),
-        //                   ),
-        //                 ),
-        //                 VerticalDivider(
-        //                   thickness: 2,
-        //                 ),
-        //                 Expanded(
-        //                   child: Column(
-        //                     crossAxisAlignment: CrossAxisAlignment.start,
-        //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-        //                     children: [
-        //                       Text(
-        //                         song?.title ?? 'No song selected',
-        //                         style: TextStyle(
-        //                           fontSize: 20,
-        //                         ),
-        //                         overflow: TextOverflow.ellipsis,
-        //                       ),
-        //                       Text(
-        //                         song?.artist ?? 'Various artists',
-        //                         style: TextStyle(
-        //                           fontSize: 16,
-        //                           color:
-        //                               Theme.of(context).textTheme.caption.color,
-        //                         ),
-        //                         overflow: TextOverflow.ellipsis,
-        //                       ),
-        //                     ],
-        //                   ),
-        //                 ),
-        //                 VerticalDivider(
-        //                   thickness: 2,
-        //                 ),
-        //                 StreamBuilder<PlayerState>(
-        //                     stream: player.playerStateStream,
-        //                     builder: (context, snapshot) {
-        //                       if (snapshot.data?.playing ?? false) {
-        //                         return IconButton(
-        //                           onPressed: () {
-        //                             player.pause();
-        //                           },
-        //                           icon: Icon(FontAwesomeIcons.pause),
-        //                         );
-        //                       }
-        //                       return IconButton(
-        //                         onPressed: () {
-        //                           player.play();
-        //                         },
-        //                         icon: Icon(FontAwesomeIcons.play),
-        //                       );
-        //                     }),
-        //               ],
-        //             );
-        //           });
-        //     }),
         child: StreamBuilder<MediaItem>(
             stream: AudioService.currentMediaItemStream,
             builder: (context, snapshot) {
@@ -610,13 +547,6 @@ class MiniPlayer extends StatelessWidget {
                   AspectRatio(
                     aspectRatio: 1,
                     child: RoundedImage(
-                        // image: song?.extras['isPodcast'] ?? false
-                        //     ? (song?.artUri != null
-                        //         ? Image.network(song?.artUri).image
-                        //         : AssetImage(Constants.defaultImagePath))
-                        //     : (song?.artUri != null
-                        //         ? Image.file(File(song?.artUri)).image
-                        //         : AssetImage(Constants.defaultImagePath)),
                         image: (song?.artUri != null
                             ? ((song?.extras ?? {})['isOnline'] ?? false
                                 ? CachedNetworkImageProvider(song.artUri)
