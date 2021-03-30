@@ -1,3 +1,3 @@
-# something_music_player
+# Temposcape player
 
 A music player written in Flutter.

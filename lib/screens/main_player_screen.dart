@@ -6,7 +6,6 @@ import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ext_storage/ext_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -23,19 +22,7 @@ class MainPlayerScreen extends StatefulWidget {
 }
 
 class _MainPlayerScreenState extends State<MainPlayerScreen> {
-  static const platform = const MethodChannel('temposcape.flutter/refresh');
-
   final audioQuery = FlutterAudioQuery();
-
-  Future<void> _refreshMediaStore(List<String> path) async {
-    try {
-      final List<dynamic> result =
-          await platform.invokeMethod('refreshMediaStore', {'path': path});
-      print(result);
-    } on PlatformException catch (e) {
-      print(e.message);
-    }
-  }
 
   Future<void> _downloadMusicToPhone(
       BuildContext context, String url, String title) async {
@@ -54,7 +41,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
             '_${DateTime.now().millisecondsSinceEpoch}.mp3'));
 
     file.writeAsBytesSync((await http.get(url)).bodyBytes);
-    await _refreshMediaStore([file.path]);
+    await refreshMediaStore([file.path]);
 
     final snackBar = SnackBar(
         content: Text(
@@ -68,6 +55,9 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Main player'),
+        actions: [
+          IconButton(icon: Icon(Icons.more_vert)),
+        ],
       ),
       body: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -140,7 +130,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                                         bool hasCurrentSong = snapshot.data.any(
                                             (element) =>
                                                 element.id ==
-                                                currentSongTypeCasted.id);
+                                                currentSongTypeCasted?.id);
                                         if (hasCurrentSong) {
                                           return IconButton(
                                               icon: Icon(Icons.favorite),
@@ -198,7 +188,7 @@ class PlayerSongInfo extends StatelessWidget {
           radius: 120,
         ),
         Text(
-          song?.title ?? 'Nyoron',
+          song?.title ?? 'No song played',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -206,7 +196,7 @@ class PlayerSongInfo extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         Text(
-          song?.artist ?? 'Churuya',
+          song?.artist ?? 'Source not found',
           style: TextStyle(
             fontSize: 16,
             color: Theme.of(context).textTheme.caption.color,

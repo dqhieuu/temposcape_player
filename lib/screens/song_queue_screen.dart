@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
-
-import 'home_screen.dart';
+import 'package:temposcape_player/widgets/widgets.dart';
 
 class SongQueueScreen extends StatelessWidget {
   /// Player state shouldn't be shuffled (randomized) when you have

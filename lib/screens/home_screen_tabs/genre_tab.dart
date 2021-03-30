@@ -1,0 +1,60 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:temposcape_player/widgets/widgets.dart';
+
+import '../../constants/constants.dart' as Constants;
+
+class GenreTab extends StatefulWidget {
+  final List<GenreInfo> searchResult;
+
+  const GenreTab({Key key, List searchResult})
+      : this.searchResult =
+            searchResult is List<GenreInfo> ? searchResult : null,
+        super(key: key);
+
+  @override
+  _GenreTabState createState() => _GenreTabState();
+}
+
+class _GenreTabState extends State<GenreTab> {
+  final _audioQuery = FlutterAudioQuery();
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<GenreInfo>>(
+        future: _audioQuery.getGenres(),
+        builder: (context, snapshot) {
+          final genres = widget.searchResult ?? snapshot.data;
+          if (genres == null || genres.isEmpty) {
+            return NullTab();
+          }
+          return GridView.count(
+            crossAxisCount: 3,
+            crossAxisSpacing: 5,
+            mainAxisSpacing: 5,
+            childAspectRatio: 1.3,
+            children: genres.map((GenreInfo genre) {
+              final genreImagePath = Constants.genreImagePaths[
+                  genres.indexOf(genre) % Constants.genreImagePaths.length];
+              return MyGridTile(
+                child: Column(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 1.7,
+                      child: Image(
+                        image: AssetImage(genreImagePath),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Text(
+                      genre.name,
+                      maxLines: 1,
+                    )
+                  ],
+                ),
+              );
+            }).toList(),
+          );
+        });
+  }
+}

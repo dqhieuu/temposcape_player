@@ -20,7 +20,8 @@ class SoundCloudPlugin extends BasePlayerPlugin {
     throw UnimplementedError();
   }
 
-  /// This is kind of hard to parse.
+  /// This sure is a roundabout way to get the data we need. But it's the only
+  /// way. Some will just say "Do the needful", "It can't be helped"...
   ///
   /// First, we have the song id. Using that id, we can get to the
   /// [songInfoPage] which contains several types of urls
@@ -34,6 +35,7 @@ class SoundCloudPlugin extends BasePlayerPlugin {
   ///
   /// Second, the [preferedSongPageUrl] we are having now doesn't link to the
   /// media file, but links to a json file containing the url of the file we need.
+  /// So, in order to get the actual song url, we need to go to that json page.
   ///
   /// Thus, we have this route [songId] -> [songInfoPage] -> [preferedSongPageUrl]
   /// -> [songPage] -> [songUrl].
@@ -62,7 +64,7 @@ class SoundCloudPlugin extends BasePlayerPlugin {
     }
 
     final songPage =
-        await http.get('${preferedSongPageUrl}?client_id=$soundCloudClientId');
+        await http.get('$preferedSongPageUrl?client_id=$soundCloudClientId');
     final songUrl = json.decode(songPage.body)['url'];
     return songUrl;
   }

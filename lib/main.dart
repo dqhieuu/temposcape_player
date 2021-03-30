@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -16,16 +17,22 @@ import 'constants/constants.dart' as Constants;
 import 'screens/home_screen.dart';
 
 void main() async {
+  // Init LastFM library
+  Scrobblenaut(lastFM: LastFM.noAuth(apiKey: Constants.lastFmApiKey));
+  // Init Hive database
   await Hive.initFlutter();
   Hive.registerAdapter(ArtistCacheAdapter());
   await Hive.openBox<ArtistCache>(ArtistCache.hiveBox);
   Hive.openBox<String>(Constants.cachedGenres);
+  // Run main app
   runApp(MyApp());
 }
 
 void _audioPlayerTaskEntryPoint() =>
     AudioServiceBackground.run(() => AudioPlayerTask());
 
+/// This class creates a just_audio audio player instance wrapped in
+/// a background task
 class AudioPlayerTask extends BackgroundAudioTask {
   final _player = AudioPlayer();
 
@@ -122,7 +129,6 @@ class AudioPlayerTask extends BackgroundAudioTask {
   @override
   Future<void> onStart(Map<String, dynamic> params) async {
     // Listen to state changes on the player...
-
     _player.playerStateStream.listen((playerState) {
       // ... and forward them to all audio_service clients.
       AudioServiceBackground.setState(
@@ -152,6 +158,8 @@ class AudioPlayerTask extends BackgroundAudioTask {
       AudioServiceBackground.setMediaItem(_queue[index]);
     });
 
+    // This sets the duration of the audio file to player's duration
+    // if duration info is null.
     _player.durationStream.listen((duration) async {
       if (duration == null) return;
       MediaItem media = _player.sequenceState.currentSource.tag;
@@ -164,6 +172,8 @@ class AudioPlayerTask extends BackgroundAudioTask {
     });
 
     _player.positionStream.listen((position) {
+      // setState() resets shuffleMode and repeatMode if these
+      // parameters are left null, that's why we need to keep their current state
       AudioServiceBackground.setState(
         position: position,
         shuffleMode: _shuffleMode,
@@ -212,16 +222,35 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     AudioService.connect();
     AudioService.start(backgroundTaskEntrypoint: _audioPlayerTaskEntryPoint);
-
     super.initState();
-    // _player = AudioPlayer();
-    // _player.playerStateStream.listen((event) async {
-    //   if (event.processingState == ProcessingState.completed) {
-    //     _player.pause();
-    //     await _player.seek(Duration.zero);
-    //   }
-    // });
-    Scrobblenaut(lastFM: LastFM.noAuth(apiKey: Constants.lastFmApiKey));
+
+    SongSortType.DEFAULT;
+    SongSortType.CURRENT_IDs_ORDER;
+    SongSortType.ALPHABETIC_ALBUM;
+    SongSortType.ALPHABETIC_ARTIST;
+    SongSortType.ALPHABETIC_COMPOSER;
+    SongSortType.DISPLAY_NAME;
+    SongSortType.GREATER_DURATION;
+    SongSortType.SMALLER_DURATION;
+    SongSortType.GREATER_TRACK_NUMBER;
+    SongSortType.SMALLER_TRACK_NUMBER;
+    SongSortType.RECENT_YEAR;
+    SongSortType.OLDEST_YEAR;
+
+    AlbumSortType.DEFAULT;
+    AlbumSortType.CURRENT_IDs_ORDER;
+    AlbumSortType.ALPHABETIC_ARTIST_NAME;
+    AlbumSortType.MORE_SONGS_NUMBER_FIRST;
+    AlbumSortType.LESS_SONGS_NUMBER_FIRST;
+    AlbumSortType.MOST_RECENT_YEAR;
+    AlbumSortType.OLDEST_YEAR;
+
+    ArtistSortType.DEFAULT;
+    ArtistSortType.CURRENT_IDs_ORDER;
+    ArtistSortType.MORE_ALBUMS_NUMBER_FIRST;
+    ArtistSortType.LESS_ALBUMS_NUMBER_FIRST;
+    ArtistSortType.MORE_TRACKS_NUMBER_FIRST;
+    ArtistSortType.LESS_TRACKS_NUMBER_FIRST;
   }
 
   @override

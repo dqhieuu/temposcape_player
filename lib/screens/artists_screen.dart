@@ -14,7 +14,7 @@ import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
-import 'home_screen.dart';
+import 'albums_screen.dart';
 import 'main_player_screen.dart';
 
 class ArtistScreen extends StatefulWidget {
@@ -37,9 +37,9 @@ class _ArtistScreenState extends State<ArtistScreen> {
     cacheBox.put(
         key,
         ArtistCache(
-          bio: artistInfo.bio?.summary,
+          bioSummary: artistInfo.bio?.summary,
           bioFull: artistInfo.bio?.content,
-          imageCache: artistImageUrl != null
+          imageBinary: artistImageUrl != null
               ? (await NetworkAssetBundle(Uri.parse(artistImageUrl))
                       .load(artistImageUrl))
                   .buffer
@@ -66,16 +66,21 @@ class _ArtistScreenState extends State<ArtistScreen> {
                 _addArtistToCache(widget.artistInput.id, artistInfo);
               }
 
-              final artistImage = artistInfo?.images?.first?.text != null
-                  ? CachedNetworkImageProvider(artistInfo.images.first.text)
-                  : artistCache?.imageCache != null
-                      ? Image.memory(artistCache.imageCache).image
-                      : widget.artistInput.artistArtPath != null
-                          ? Image.file(File(widget.artistInput.artistArtPath))
-                              .image
-                          : AssetImage(Constants.defaultImagePath);
+              ImageProvider artistImage;
+              if (artistInfo?.images?.first?.text != null) {
+                artistImage =
+                    CachedNetworkImageProvider(artistInfo.images.first.text);
+              } else if (artistCache?.imageBinary != null) {
+                artistImage = Image.memory(artistCache.imageBinary).image;
+              } else if (widget.artistInput.artistArtPath != null) {
+                artistImage =
+                    Image.file(File(widget.artistInput.artistArtPath)).image;
+              } else {
+                artistImage = AssetImage(Constants.defaultImagePath);
+              }
+
               final artistBio = (artistInfo?.bio?.summary ??
-                      artistCache?.bio ??
+                      artistCache?.bioSummary ??
                       'No biography')
                   .replaceAll(
                 RegExp(r'<a.*<\/a>'),
@@ -129,6 +134,56 @@ class _ArtistScreenState extends State<ArtistScreen> {
                         Text(artistBio),
                       ],
                     ),
+                  ),
+                  Text('Albums'),
+                  FutureBuilder<List<AlbumInfo>>(
+                    future: audioQuery.getAlbumsFromArtist(
+                        artist: widget.artistInput.name),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return Container();
+                      final albums = snapshot.data;
+                      return Container(
+                        height: 150,
+                        child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: albums
+                                    ?.map((album) => MyGridTile(
+                                          child: Container(
+                                            width: 100,
+                                            child: Column(
+                                              children: [
+                                                Image(
+                                                  image: album.albumArt != null
+                                                      ? Image.file(File(
+                                                              album.albumArt))
+                                                          .image
+                                                      : AssetImage(Constants
+                                                          .defaultAlbumPath),
+                                                ),
+                                                Text(
+                                                  album.title,
+                                                  textAlign: TextAlign.center,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 2,
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                          onTap: () {
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        AlbumScreen(
+                                                          albumInput: album,
+                                                        )));
+                                          },
+                                        ))
+                                    ?.toList() ??
+                                []),
+                      );
+                    },
                   ),
                   Text('Tracks'),
                   FutureBuilder<List<SongInfo>>(

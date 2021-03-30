@@ -7,16 +7,16 @@ import 'package:hive/hive.dart';
 class ArtistCache {
   static final hiveBox = 'cachedArtists';
 
-  ArtistCache({this.bio, this.bioFull, this.imageCache});
-
+  ArtistCache({this.bioSummary, this.bioFull, this.imageBinary});
   @HiveField(0)
-  String bio;
+  String bioSummary;
   @HiveField(1)
   String bioFull;
   @HiveField(2)
-  Uint8List imageCache;
+  Uint8List imageBinary;
 }
 
+// Generated automatically.
 class ArtistCacheAdapter extends TypeAdapter<ArtistCache> {
   @override
   final int typeId = 1;
@@ -28,9 +28,9 @@ class ArtistCacheAdapter extends TypeAdapter<ArtistCache> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ArtistCache()
-      ..bio = fields[0] as String
+      ..bioSummary = fields[0] as String
       ..bioFull = fields[1] as String
-      ..imageCache = fields[2] as Uint8List;
+      ..imageBinary = fields[2] as Uint8List;
   }
 
   @override
@@ -38,11 +38,11 @@ class ArtistCacheAdapter extends TypeAdapter<ArtistCache> {
     writer
       ..writeByte(3)
       ..writeByte(0)
-      ..write(obj.bio)
+      ..write(obj.bioSummary)
       ..writeByte(1)
       ..write(obj.bioFull)
       ..writeByte(2)
-      ..write(obj.imageCache);
+      ..write(obj.imageBinary);
   }
 
   @override
