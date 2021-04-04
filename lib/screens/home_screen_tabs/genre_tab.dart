@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:temposcape_player/screens/genre_screen.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../../constants/constants.dart' as Constants;
@@ -28,15 +29,26 @@ class _GenreTabState extends State<GenreTab> {
           if (genres == null || genres.isEmpty) {
             return NullTab();
           }
-          return GridView.count(
-            crossAxisCount: 3,
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 5,
-            childAspectRatio: 1.3,
-            children: genres.map((GenreInfo genre) {
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 5,
+              mainAxisSpacing: 5,
+              childAspectRatio: 1.3,
+            ),
+            itemCount: genres.length,
+            itemBuilder: (_, index) {
+              final genre = genres[index];
               final genreImagePath = Constants.genreImagePaths[
                   genres.indexOf(genre) % Constants.genreImagePaths.length];
               return MyGridTile(
+                onTap: () {
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //       builder: (context) => GenreScreen(genreInput: genre)),
+                  // );
+                },
                 child: Column(
                   children: [
                     AspectRatio(
@@ -53,7 +65,7 @@ class _GenreTabState extends State<GenreTab> {
                   ],
                 ),
               );
-            }).toList(),
+            },
           );
         });
   }

@@ -14,13 +14,13 @@ import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
-import 'albums_screen.dart';
+import 'album_screen.dart';
 import 'main_player_screen.dart';
 
 class ArtistScreen extends StatefulWidget {
   final ArtistInfo artistInput;
 
-  ArtistScreen({Key key, this.artistInput}) : super(key: key);
+  const ArtistScreen({Key key, this.artistInput}) : super(key: key);
 
   @override
   _ArtistScreenState createState() => _ArtistScreenState();

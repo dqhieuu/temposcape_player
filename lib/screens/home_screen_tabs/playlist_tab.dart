@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:temposcape_player/screens/playlist_screen.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../../constants/constants.dart' as Constants;
@@ -58,35 +59,12 @@ class _PlaylistTabState extends State<PlaylistTab> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<PlaylistInfo>>(
-        future: _audioQuery.getPlaylists(),
-        builder: (context, snapshot) {
-          final playlists = widget.searchResult ?? snapshot.data;
-          if (playlists != null && playlists.isNotEmpty) {
-            return Scaffold(
-              floatingActionButton: FloatingActionButton(
-                child: Icon(Icons.add),
-                onPressed: _showAddPlaylistDialog,
-              ),
-              body: ListView(
-                children: playlists
-                    .where((playlist) =>
-                        playlist.name != Constants.favoritesPlaylist)
-                    .toList()
-                    .map((PlaylistInfo playlist) => ListTile(
-                          leading: RoundedImage(
-                            image: AssetImage(Constants.defaultImagePath),
-                            width: 30,
-                            height: 30,
-                          ),
-                          title: Text(
-                            playlist.name,
-                            maxLines: 1,
-                          ),
-                        ))
-                    .toList(),
-              ),
-            );
-          }
+      future: _audioQuery.getPlaylists(),
+      builder: (context, snapshot) {
+        final playlists = (widget.searchResult ?? snapshot.data)
+            ?.where((playlist) => playlist.name != Constants.favoritesPlaylist)
+            ?.toList();
+        if (playlists == null || playlists.isEmpty) {
           return Center(
             child: GestureDetector(
               onTap: _showAddPlaylistDialog,
@@ -98,6 +76,41 @@ class _PlaylistTabState extends State<PlaylistTab> {
               ),
             ),
           );
-        });
+        }
+        return Scaffold(
+          floatingActionButton: FloatingActionButton(
+            child: Icon(Icons.add),
+            onPressed: _showAddPlaylistDialog,
+          ),
+          body: ListView.builder(
+            itemCount: playlists.length,
+            itemBuilder: (BuildContext context, int index) {
+              final playlist = playlists[index];
+              return ListTile(
+                leading: RoundedImage(
+                  image: AssetImage(Constants.defaultImagePath),
+                  width: 50,
+                  height: 50,
+                ),
+                title: Text(
+                  playlist.name,
+                  maxLines: 1,
+                ),
+                subtitle: Text(
+                    'Total songs: ${playlist.memberIds.length.toString()}'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            PlaylistScreen(playlistInput: playlist)),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 }

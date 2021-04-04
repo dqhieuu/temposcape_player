@@ -1,50 +1,39 @@
-import 'dart:io';
-
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:scrobblenaut/lastfm.dart' as lastfm;
-import 'package:scrobblenaut/scrobblenaut.dart' as scrobblenaut;
-import 'package:temposcape_player/utils/utils.dart';
+import 'package:temposcape_player/utils/song_type_conversion.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
-import 'home_screen.dart';
 import 'main_player_screen.dart';
 
-class AlbumScreen extends StatefulWidget {
-  final AlbumInfo albumInput;
+class PlaylistScreen extends StatefulWidget {
+  final PlaylistInfo playlistInput;
 
-  AlbumScreen({Key key, this.albumInput}) : super(key: key);
+  const PlaylistScreen({Key key, this.playlistInput}) : super(key: key);
 
   @override
-  _AlbumScreenState createState() => _AlbumScreenState();
+  _PlaylistScreenState createState() => _PlaylistScreenState();
 }
 
-class _AlbumScreenState extends State<AlbumScreen> {
-  final audioQuery = FlutterAudioQuery();
-
-  var songs = <SongInfo>[];
+class _PlaylistScreenState extends State<PlaylistScreen> {
+  final _audioQuery = FlutterAudioQuery();
 
   @override
   Widget build(BuildContext context) {
-    final albumArt = widget.albumInput.albumArt != null
-        ? Image.file(File(widget.albumInput.albumArt)).image
-        : AssetImage(Constants.defaultAlbumPath);
     return Scaffold(
         appBar: AppBar(
-          title: Text(widget.albumInput.artist),
-        ),
+            // title: Text(widget.playlistInput.name),
+            ),
         body: ListView(
           children: [
             ArtCoverHeader(
               height: 220,
-              image: albumArt,
+              image: AssetImage(Constants.defaultImagePath),
               content: Row(
                 children: [
                   Image(
-                    image: albumArt,
+                    image: AssetImage(Constants.defaultImagePath),
                     fit: BoxFit.cover,
                     width: 160,
                     height: 160,
@@ -56,13 +45,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.albumInput.title,
+                          widget.playlistInput.name,
                           maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          widget.albumInput.artist,
-                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -71,35 +55,10 @@ class _AlbumScreenState extends State<AlbumScreen> {
                 ],
               ),
             ),
-            FutureBuilder<lastfm.Album>(
-                future: scrobblenaut.Scrobblenaut.instance.album.getInfo(
-                  artist: widget.albumInput.artist,
-                  album: widget.albumInput.title,
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final album = snapshot.data;
-                    print(album.url);
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Listener count: ${album.listeners}'),
-                          Text('Play count: ${album.playCount}'),
-                        ],
-                      ),
-                    );
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text('No Info'),
-                  );
-                }),
             Text('Tracks'),
             FutureBuilder<List<SongInfo>>(
-              future:
-                  audioQuery.getSongsFromAlbum(albumId: widget.albumInput.id),
+              future: _audioQuery.getSongsFromPlaylist(
+                  playlist: widget.playlistInput),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return Container();
                 final songs = snapshot.data.map(songInfoToMediaItem).toList();

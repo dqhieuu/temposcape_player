@@ -23,8 +23,7 @@ class MainActivity : FlutterActivity() {
 
 
     private fun refreshMediaStore(fileDir: List<String>?): List<String>? {
-        MediaScannerConnection.scanFile(context, fileDir?.toTypedArray(),
-                arrayOf("music"), null)
+        MediaScannerConnection.scanFile(context, fileDir?.toTypedArray(), null, null)
 
         return fileDir
     }

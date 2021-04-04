@@ -6,7 +6,7 @@ import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../../constants/constants.dart' as Constants;
-import '../albums_screen.dart';
+import '../album_screen.dart';
 
 class AlbumTab extends StatefulWidget {
   final List<AlbumInfo> searchResult;
@@ -32,45 +32,44 @@ class _AlbumTabState extends State<AlbumTab> {
           if (albums == null || albums.isEmpty) {
             return NullTab();
           }
-          return OrientationBuilder(builder: (context, orientation) {
-            return GridView.count(
-              crossAxisCount:
-                  MediaQuery.of(context).orientation == Orientation.portrait
-                      ? 3
-                      : 5,
-              crossAxisSpacing: 5,
-              mainAxisSpacing: 5,
-              childAspectRatio: 0.75,
-              children: [
-                ...albums.map((AlbumInfo album) {
-                  return MyGridTile(
-                    child: Column(
-                      children: [
-                        album.albumArt != null
-                            ? Image.file(File(album.albumArt))
-                            : Image(
-                                image: AssetImage(Constants.defaultAlbumPath),
-                              ),
-                        Text(
-                          album.title,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                        )
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => AlbumScreen(
-                                    albumInput: album,
-                                  )));
-                    },
-                  );
-                })
-              ],
-            );
-          });
+          return GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount:
+                    MediaQuery.of(context).orientation == Orientation.portrait
+                        ? 3
+                        : 5,
+                crossAxisSpacing: 5,
+                mainAxisSpacing: 5,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: albums.length,
+              itemBuilder: (_, int index) {
+                final album = albums[index];
+                return MyGridTile(
+                  child: Column(
+                    children: [
+                      albums[index].albumArt != null
+                          ? Image.file(File(album.albumArt))
+                          : Image(
+                              image: AssetImage(Constants.defaultAlbumPath),
+                            ),
+                      Text(
+                        album.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                      )
+                    ],
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AlbumScreen(
+                                  albumInput: album,
+                                )));
+                  },
+                );
+              });
         });
   }
 }

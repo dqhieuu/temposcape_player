@@ -43,30 +43,33 @@ class _FavoriteTabState extends State<FavoriteTab> {
                         (song) => !song.filePath.contains(r'/Android/media/'))
                     ?.toList();
                 final songs = widget.searchResult ?? allSongsWithoutSystemMusic;
-                if (songs == null) {
+                if (songs == null || songs.isEmpty) {
                   return NullTab();
                 }
-                return ListView(
-                    children: songs
-                        .map((SongInfo song) => SongListTile(
-                              song: songInfoToMediaItem(song),
-                              onTap: () async {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => MainPlayerScreen()),
-                                );
-                                await AudioService.updateQueue(
-                                    songs.map(songInfoToMediaItem).toList());
-                                await AudioService.skipToQueueItem(song.id);
-                                AudioService.play();
-                              },
-                              // selected:
-                              //     (snapshot.data?.currentSource?.tag)
-                              //             ?.filePath ==
-                              //         song.filePath,
-                            ))
-                        .toList());
+                return ListView.builder(
+                  itemCount: songs.length,
+                  itemBuilder: (_, index) {
+                    final song = songs[index];
+                    return SongListTile(
+                      song: songInfoToMediaItem(song),
+                      onTap: () async {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MainPlayerScreen()),
+                        );
+                        await AudioService.updateQueue(
+                            songs.map(songInfoToMediaItem).toList());
+                        await AudioService.skipToQueueItem(song.id);
+                        AudioService.play();
+                      },
+                      // selected:
+                      //     (snapshot.data?.currentSource?.tag)
+                      //             ?.filePath ==
+                      //         song.filePath,
+                    );
+                  },
+                );
               });
         });
   }

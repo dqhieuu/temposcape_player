@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_search_bar/flutter_search_bar.dart';
@@ -28,7 +29,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  final myTabs = <Tab>[
+  final _myTabs = <Tab>[
     const Tab(text: 'Songs'),
     const Tab(text: 'Albums'),
     const Tab(text: 'Artists'),
@@ -38,12 +39,16 @@ class _HomeScreenState extends State<HomeScreen>
   ];
   TabController _tabController;
   SearchBar _searchBar;
-  final FlutterAudioQuery audioQuery = FlutterAudioQuery();
+  PreferredSizeWidget _multiSelectBar;
+  bool _tabSwipeable = true;
+  final FlutterAudioQuery _audioQuery = FlutterAudioQuery();
 
-  List<dynamic> searchResult;
+  bool _orderAscending = false;
+  int _currentTabIndex = 0;
+  List<dynamic> _searchResult;
 
   _HomeScreenState() {
-    audioQuery.getPlaylists().then((playlists) {
+    _audioQuery.getPlaylists().then((playlists) {
       if (playlists
           .where((playlist) => playlist.name == Constants.favoritesPlaylist)
           .isEmpty) {
@@ -56,12 +61,12 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(vsync: this, length: myTabs.length);
+    _tabController = TabController(vsync: this, length: _myTabs.length);
     _searchBar = new SearchBar(
       setState: setState,
       buildDefaultAppBar: buildAppBar,
       onChanged: (String value) async {
-        switch (_tabController.index) {
+        switch (_currentTabIndex) {
           case 0:
             searchSongs(value);
             break;
@@ -86,13 +91,16 @@ class _HomeScreenState extends State<HomeScreen>
       onCleared: _clearSearchResult,
     );
     _tabController.addListener(() {
+      if (_tabController.index != null) {
+        _currentTabIndex = _tabController.index;
+      }
       // Clear search result when switching tab
       _clearSearchResult();
     });
   }
 
   void _clearSearchResult() {
-    searchResult = null;
+    _searchResult = null;
   }
 
   @override
@@ -102,43 +110,43 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void searchSongs(String value) async {
-    searchResult =
-        value != null ? await audioQuery.searchSongs(query: value) : null;
+    _searchResult =
+        value != null ? await _audioQuery.searchSongs(query: value) : null;
     setState(() {});
   }
 
   void searchAlbums(String value) async {
-    searchResult =
-        value != null ? await audioQuery.searchAlbums(query: value) : null;
+    _searchResult =
+        value != null ? await _audioQuery.searchAlbums(query: value) : null;
     setState(() {});
   }
 
   void searchArtists(String value) async {
-    searchResult =
-        value != null ? await audioQuery.searchArtists(query: value) : null;
+    _searchResult =
+        value != null ? await _audioQuery.searchArtists(query: value) : null;
     setState(() {});
   }
 
   void searchPlaylists(String value) async {
-    searchResult =
-        value != null ? await audioQuery.searchPlaylists(query: value) : null;
+    _searchResult =
+        value != null ? await _audioQuery.searchPlaylists(query: value) : null;
     setState(() {});
   }
 
   void searchFavorites(String value) async {
     if (value == null) {
       setState(() {
-        searchResult = null;
+        _searchResult = null;
       });
       return;
     }
 
     final favoritePlaylist =
-        (await audioQuery.searchPlaylists(query: Constants.favoritesPlaylist))
+        (await _audioQuery.searchPlaylists(query: Constants.favoritesPlaylist))
             ?.first;
     if (favoritePlaylist != null) {
-      searchResult =
-          (await audioQuery.getSongsFromPlaylist(playlist: favoritePlaylist))
+      _searchResult =
+          (await _audioQuery.getSongsFromPlaylist(playlist: favoritePlaylist))
               ?.where((song) => song.title?.toLowerCase()?.contains(value))
               ?.toList();
     }
@@ -146,23 +154,91 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void searchGenres(String value) async {
-    searchResult =
-        value != null ? await audioQuery.searchGenres(query: value) : null;
+    _searchResult =
+        value != null ? await _audioQuery.searchGenres(query: value) : null;
     setState(() {});
   }
+
+  var options = ['Ascending', 'Descending'];
 
   AppBar buildAppBar(BuildContext context) {
     return AppBar(
       title: Text(Constants.appName),
-      actions: [
+      actions: <Widget>[
         _searchBar.getSearchAction(context),
-        IconButton(icon: Icon(Icons.more_vert)),
+        PopupMenuButton<String>(
+          onSelected: (str) {
+            switch (str) {
+              case 'onlsearch':
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => OnlineSearchScreen()));
+                break;
+              case 'settings':
+                break;
+              case 'order':
+                setState(() {
+                  _orderAscending = !_orderAscending;
+                });
+
+                break;
+              // showMenu(
+              //   context: context,
+              //   position: RelativeRect.fromLTRB(10, 10, 0, 0),
+              //   items: {'Album'}.map((String choice) {
+              //     return PopupMenuItem<String>(
+              //       value: choice,
+              //       child: Text(choice),
+              //     );
+              //   }).toList(),
+              // );
+            }
+          },
+          itemBuilder: (BuildContext context) {
+            return [
+              PopupMenuItem(
+                value: 'sort',
+                child: const Text('Sort by...'),
+              ),
+              PopupMenuItem(
+                value: 'order',
+                child: Row(
+                  children: [
+                    Text('Order: '),
+                    _orderAscending
+                        ? Row(
+                            children: [
+                              Text('Ascending '),
+                              Icon(Icons.arrow_upward_rounded),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Text('Descending '),
+                              Icon(Icons.arrow_downward_rounded),
+                            ],
+                          )
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'onlsearch',
+                child: const Text('Online search'),
+              ),
+              PopupMenuItem(
+                value: 'settings',
+                child: const Text('Settings'),
+              ),
+            ];
+          },
+        )
       ],
       bottom: TabBar(
         controller: _tabController,
         isScrollable: true,
         unselectedLabelColor: Colors.white38,
-        tabs: myTabs,
+        tabs: _myTabs,
       ),
     );
   }
@@ -170,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _searchBar.build(context),
+      appBar: _multiSelectBar ?? _searchBar.build(context),
       resizeToAvoidBottomInset: false,
       drawer: Drawer(
         child: ListView(
@@ -216,18 +292,50 @@ class _HomeScreenState extends State<HomeScreen>
       body: Column(
         children: [
           Expanded(
-            child: TabBarView(controller: _tabController, children: [
-              SongTab(searchResult: searchResult),
-              AlbumTab(searchResult: searchResult),
-              ArtistTab(searchResult: searchResult),
-              PlaylistTab(searchResult: searchResult),
-              FavoriteTab(searchResult: searchResult),
-              GenreTab(searchResult: searchResult)
-            ]),
+            child: TabBarView(
+                controller: _tabController,
+                physics: _tabSwipeable ? null : NeverScrollableScrollPhysics(),
+                children: [
+                  SongTab(
+                    searchResult: _searchResult,
+                    reverseOrder: !_orderAscending,
+                    tabAppBarCallback: (tabAppBar) {
+                      setState(() {
+                        _multiSelectBar = tabAppBar;
+                        _tabSwipeable = (_multiSelectBar == null);
+                      });
+                    },
+                  ),
+                  AlbumTab(searchResult: _searchResult),
+                  ArtistTab(searchResult: _searchResult),
+                  PlaylistTab(searchResult: _searchResult),
+                  FavoriteTab(searchResult: _searchResult),
+                  GenreTab(searchResult: _searchResult)
+                ]),
           ),
           MiniPlayer(),
         ],
       ),
+    );
+  }
+}
+
+class WidgetWithRightArrow extends StatelessWidget {
+  final Widget child;
+
+  const WidgetWithRightArrow({
+    this.child,
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        child,
+        Spacer(),
+        Icon(Icons.arrow_right, size: 30.0),
+      ],
     );
   }
 }

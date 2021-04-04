@@ -8,7 +8,7 @@ import 'package:temposcape_player/models/artist_cache.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../../constants/constants.dart' as Constants;
-import '../artists_screen.dart';
+import '../artist_screen.dart';
 
 class ArtistTab extends StatefulWidget {
   final List<ArtistInfo> searchResult;
@@ -34,12 +34,16 @@ class _ArtistTabState extends State<ArtistTab> {
           if (artists == null || artists.isEmpty) {
             return NullTab();
           }
-          return GridView.count(
-            crossAxisCount: 3,
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 5,
-            childAspectRatio: 0.55,
-            children: artists.map((ArtistInfo artist) {
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 5,
+              mainAxisSpacing: 5,
+              childAspectRatio: 0.55,
+            ),
+            itemCount: artists.length,
+            itemBuilder: (_, index) {
+              final artist = artists[index];
               ImageProvider artistImage;
               final cachedImage = Hive.box<ArtistCache>(ArtistCache.hiveBox)
                   .get(artist.id)
@@ -74,7 +78,7 @@ class _ArtistTabState extends State<ArtistTab> {
                               ArtistScreen(artistInput: artist)));
                 },
               );
-            }).toList(),
+            },
           );
         });
   }

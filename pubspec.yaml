@@ -49,6 +49,7 @@ dependencies:
   html: ^0.14.0+4
   settings_ui: ^0.6.0
   ext_storage: ^1.0.3
+  multi_select_item: ^1.0.3
 
 
 dev_dependencies:
@@ -94,3 +95,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+flutter_intl:
+  enabled: true

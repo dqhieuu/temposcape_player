@@ -14,6 +14,7 @@ import 'package:temposcape_player/models/artist_cache.dart';
 import 'package:temposcape_player/screens/home_screen.dart';
 
 import 'constants/constants.dart' as Constants;
+import 'generated/l10n.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
@@ -121,6 +122,16 @@ class AudioPlayerTask extends BackgroundAudioTask {
   }
 
   @override
+  Future<Function> onAddQueueItem(MediaItem mediaItem) {
+    // TODO: implement this
+  }
+
+  @override
+  Future<Function> onRemoveQueueItem(MediaItem mediaItem) {
+    // TODO: implement this
+  }
+
+  @override
   Future<void> onStop() async {
     await _player.dispose();
     await super.onStop();
@@ -204,15 +215,12 @@ class _MyAppState extends State<MyApp> {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         localizationsDelegates: [
-          // AppLocalizations.delegate,
+          S.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [
-          const Locale('en', 'US'),
-          const Locale('vi', 'VN'),
-        ],
+        supportedLocales: S.delegate.supportedLocales,
         home: AudioServiceWidget(child: HomeScreen()),
       ),
     );
@@ -250,6 +258,22 @@ class _MyAppState extends State<MyApp> {
     ArtistSortType.MORE_ALBUMS_NUMBER_FIRST;
     ArtistSortType.LESS_ALBUMS_NUMBER_FIRST;
     ArtistSortType.MORE_TRACKS_NUMBER_FIRST;
+    ArtistSortType.LESS_TRACKS_NUMBER_FIRST;
+
+    SongSortType.DEFAULT;
+    SongSortType.ALPHABETIC_ALBUM;
+    SongSortType.ALPHABETIC_ARTIST;
+    SongSortType.DISPLAY_NAME;
+    SongSortType.SMALLER_DURATION;
+    SongSortType.OLDEST_YEAR;
+
+    AlbumSortType.DEFAULT;
+    AlbumSortType.ALPHABETIC_ARTIST_NAME;
+    AlbumSortType.LESS_SONGS_NUMBER_FIRST;
+    AlbumSortType.OLDEST_YEAR;
+
+    ArtistSortType.DEFAULT;
+    ArtistSortType.LESS_ALBUMS_NUMBER_FIRST;
     ArtistSortType.LESS_TRACKS_NUMBER_FIRST;
   }
 
