@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:temposcape_player/screens/genre_screen.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../../constants/constants.dart' as Constants;
 
 class GenreTab extends StatefulWidget {
   final List<GenreInfo> searchResult;
+  final bool reverseOrder;
 
-  const GenreTab({Key key, List searchResult})
-      : this.searchResult =
+  const GenreTab({
+    Key key,
+    List searchResult,
+    this.reverseOrder = false,
+  })  : this.searchResult =
             searchResult is List<GenreInfo> ? searchResult : null,
         super(key: key);
 
@@ -37,6 +40,7 @@ class _GenreTabState extends State<GenreTab> {
               childAspectRatio: 1.3,
             ),
             itemCount: genres.length,
+            reverse: widget.reverseOrder,
             itemBuilder: (_, index) {
               final genre = genres[index];
               final genreImagePath = Constants.genreImagePaths[

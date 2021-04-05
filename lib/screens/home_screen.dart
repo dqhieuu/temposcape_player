@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen>
   bool _tabSwipeable = true;
   final FlutterAudioQuery _audioQuery = FlutterAudioQuery();
 
-  bool _orderAscending = false;
+  bool _reverseOrder = false;
   int _currentTabIndex = 0;
   List<dynamic> _searchResult;
 
@@ -179,34 +179,23 @@ class _HomeScreenState extends State<HomeScreen>
                 break;
               case 'order':
                 setState(() {
-                  _orderAscending = !_orderAscending;
+                  _reverseOrder = !_reverseOrder;
                 });
-
                 break;
-              // showMenu(
-              //   context: context,
-              //   position: RelativeRect.fromLTRB(10, 10, 0, 0),
-              //   items: {'Album'}.map((String choice) {
-              //     return PopupMenuItem<String>(
-              //       value: choice,
-              //       child: Text(choice),
-              //     );
-              //   }).toList(),
-              // );
             }
           },
           itemBuilder: (BuildContext context) {
             return [
-              PopupMenuItem(
-                value: 'sort',
-                child: const Text('Sort by...'),
-              ),
+              // PopupMenuItem(
+              //   value: 'sort',
+              //   child: const Text('Sort by...'),
+              // ),
               PopupMenuItem(
                 value: 'order',
                 child: Row(
                   children: [
                     Text('Order: '),
-                    _orderAscending
+                    !_reverseOrder
                         ? Row(
                             children: [
                               Text('Ascending '),
@@ -298,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen>
                 children: [
                   SongTab(
                     searchResult: _searchResult,
-                    reverseOrder: !_orderAscending,
+                    reverseOrder: _reverseOrder,
                     tabAppBarCallback: (tabAppBar) {
                       setState(() {
                         _multiSelectBar = tabAppBar;
@@ -308,8 +297,26 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   AlbumTab(searchResult: _searchResult),
                   ArtistTab(searchResult: _searchResult),
-                  PlaylistTab(searchResult: _searchResult),
-                  FavoriteTab(searchResult: _searchResult),
+                  PlaylistTab(
+                    searchResult: _searchResult,
+                    reverseOrder: _reverseOrder,
+                    tabAppBarCallback: (tabAppBar) {
+                      setState(() {
+                        _multiSelectBar = tabAppBar;
+                        _tabSwipeable = (_multiSelectBar == null);
+                      });
+                    },
+                  ),
+                  FavoriteTab(
+                    searchResult: _searchResult,
+                    reverseOrder: _reverseOrder,
+                    tabAppBarCallback: (tabAppBar) {
+                      setState(() {
+                        _multiSelectBar = tabAppBar;
+                        _tabSwipeable = (_multiSelectBar == null);
+                      });
+                    },
+                  ),
                   GenreTab(searchResult: _searchResult)
                 ]),
           ),

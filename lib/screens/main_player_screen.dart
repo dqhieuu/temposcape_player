@@ -27,9 +27,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
   Future<void> _downloadMusicToPhone(
       BuildContext context, String url, String title) async {
     if (url == null || !url.startsWith('http')) {
-      final snackBar = SnackBar(content: Text('Cannot download this song.'));
-
-      Scaffold.of(context).showSnackBar(snackBar);
+      showSnackBar(context, text: 'Cannot download this song.');
       return;
     }
 
@@ -43,11 +41,10 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
     file.writeAsBytesSync((await http.get(url)).bodyBytes);
     await refreshMediaStore([file.path]);
 
-    final snackBar = SnackBar(
-        content: Text(
-            'Successfully downloaded ${title.length <= 20 ? title : title + '...'}.mp3.'));
-
-    Scaffold.of(context).showSnackBar(snackBar);
+    showSnackBar(
+      context,
+      text: 'Successfully downloaded ${truncateText(title, 20)}.mp3.',
+    );
   }
 
   @override
@@ -292,9 +289,11 @@ class PlayerControlBar extends StatelessWidget {
                   switch (shuffleMode) {
                     case AudioServiceShuffleMode.all:
                       AudioService.setShuffleMode(AudioServiceShuffleMode.none);
+                      showSnackBar(context, text: 'Shuffle OFF');
                       break;
                     case AudioServiceShuffleMode.none:
                       AudioService.setShuffleMode(AudioServiceShuffleMode.all);
+                      showSnackBar(context, text: 'Shuffle ON');
                       break;
                     default:
                       break;
@@ -325,12 +324,15 @@ class PlayerControlBar extends StatelessWidget {
                   switch (repeatMode) {
                     case AudioServiceRepeatMode.none:
                       AudioService.setRepeatMode(AudioServiceRepeatMode.all);
+                      showSnackBar(context, text: 'Loop the entire queue');
                       break;
                     case AudioServiceRepeatMode.all:
                       AudioService.setRepeatMode(AudioServiceRepeatMode.one);
+                      showSnackBar(context, text: 'Loop only this song');
                       break;
                     case AudioServiceRepeatMode.one:
                       AudioService.setRepeatMode(AudioServiceRepeatMode.none);
+                      showSnackBar(context, text: 'Loop OFF');
                       break;
                     default:
                       break;

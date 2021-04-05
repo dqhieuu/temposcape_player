@@ -4,7 +4,6 @@ import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:provider/provider.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
@@ -38,11 +37,9 @@ class SongQueueScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final player = context.read<AudioPlayer>();
-
     // Un-shuffle the player
     if (AudioService.playbackState.shuffleMode == AudioServiceShuffleMode.all) {
-      _reorderSongsToShuffleIndices(player);
+      AudioService.customAction('makeShuffledOrderUnshuffledOrder');
     }
 
     return StreamBuilder<List<MediaItem>>(
@@ -59,25 +56,11 @@ class SongQueueScreen extends StatelessWidget {
                   }
                   final currentMediaItem = snapshot.data;
                   return ReorderableListView(
-                    // children: queue
-                    //         ?.toList()
-                    //         ?.map((mediaItem) => SongListTile(
-                    //               key: Key(mediaItem.id),
-                    //               song: mediaItem,
-                    //               draggable: true,
-                    //               selected:
-                    //                   currentMediaItem?.id == mediaItem.id,
-                    //               onTap: () {
-                    //                 AudioService.skipToQueueItem(mediaItem.id);
-                    //               },
-                    //             ))
-                    //         ?.toList() ??
-                    //     [],
                     children: queue
                         .toList()
                         .map(
                           (song) => ListTile(
-                            key: Key(song.id),
+                            key: UniqueKey(),
                             leading: RoundedImage(
                               image: song.artUri != null
                                   ? ((song.extras ?? {})['isOnline'] ?? false
@@ -88,8 +71,11 @@ class SongQueueScreen extends StatelessWidget {
                                   : AssetImage(Constants.defaultImagePath),
                               width: 50,
                               height: 50,
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            onTap: () {},
+                            onTap: () {
+                              AudioService.skipToQueueItem(song.id);
+                            },
                             title: Text(
                               song.title,
                               maxLines: 1,
@@ -100,53 +86,39 @@ class SongQueueScreen extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            selected: false,
-                            // trailing: Container(
-                            //   child: Row(
-                            //     mainAxisSize: MainAxisSize.min,
-                            //     children: [
-                            //       if (song.duration != null)
-                            //         Text(
-                            //           getFormattedDuration(
-                            //             song.duration,
-                            //             timeFormat: TimeFormat
-                            //                 .optionalHoursMinutes0Seconds,
-                            //           ),
-                            //         ),
-                            //       Container(
-                            //         child: Icon(
-                            //           Icons.drag_handle,
-                            //           color: Theme.of(context)
-                            //               .textTheme
-                            //               .bodyText1
-                            //               .color,
-                            //           size: 36,
-                            //         ),
-                            //         padding: EdgeInsets.only(left: 20.0),
-                            //       ),
-                            //     ],
-                            //   ),
-                            // ),
+                            selected: currentMediaItem?.id == song.id,
+                            trailing: Container(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                      icon: Icon(Icons.close),
+                                      onPressed: () {
+                                        AudioService.removeQueueItem(song);
+                                      }),
+                                  Container(
+                                    child: Icon(
+                                      Icons.drag_handle,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyText1
+                                          .color,
+                                      size: 36,
+                                    ),
+                                    padding: EdgeInsets.only(left: 20.0),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         )
                         .toList(),
-
                     onReorder: (int oldIndex, int newIndex) async {
-                      // if (oldIndex < newIndex) {
-                      //   newIndex -= 1;
-                      // }
-                      //
-                      // final currentlyPlayedIndex = player.currentIndex;
-                      // final currentlyPlayedPosition = player.position;
-                      // final currentlyPlayedItem = queue[currentlyPlayedIndex];
-                      //
-                      // final changedItem = queue.removeAt(oldIndex);
-                      // queue.insert(newIndex, changedItem);
-                      //
-                      // await player
-                      //     .setAudioSource(ConcatenatingAudioSource(children: queue));
-                      // player.seek(currentlyPlayedPosition,
-                      //     index: queue.indexOf(currentlyPlayedItem));
+                      AudioService.customAction(
+                          'moveQueueItem', <String, dynamic>{
+                        'oldIndex': oldIndex,
+                        'newIndex': newIndex,
+                      });
                     },
                   );
                 }),

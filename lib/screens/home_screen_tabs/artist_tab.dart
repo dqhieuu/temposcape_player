@@ -12,9 +12,13 @@ import '../artist_screen.dart';
 
 class ArtistTab extends StatefulWidget {
   final List<ArtistInfo> searchResult;
+  final bool reverseOrder;
 
-  const ArtistTab({Key key, List searchResult})
-      : this.searchResult =
+  const ArtistTab({
+    Key key,
+    List searchResult,
+    this.reverseOrder = false,
+  })  : this.searchResult =
             searchResult is List<ArtistInfo> ? searchResult : null,
         super(key: key);
 
@@ -41,6 +45,7 @@ class _ArtistTabState extends State<ArtistTab> {
               mainAxisSpacing: 5,
               childAspectRatio: 0.55,
             ),
+            reverse: widget.reverseOrder,
             itemCount: artists.length,
             itemBuilder: (_, index) {
               final artist = artists[index];

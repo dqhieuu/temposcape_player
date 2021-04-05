@@ -10,9 +10,13 @@ import '../album_screen.dart';
 
 class AlbumTab extends StatefulWidget {
   final List<AlbumInfo> searchResult;
+  final bool reverseOrder;
 
-  const AlbumTab({Key key, List searchResult})
-      : this.searchResult =
+  const AlbumTab({
+    Key key,
+    List searchResult,
+    this.reverseOrder = false,
+  })  : this.searchResult =
             searchResult is List<AlbumInfo> ? searchResult : null,
         super(key: key);
 
@@ -42,6 +46,7 @@ class _AlbumTabState extends State<AlbumTab> {
                 mainAxisSpacing: 5,
                 childAspectRatio: 0.75,
               ),
+              reverse: widget.reverseOrder,
               itemCount: albums.length,
               itemBuilder: (_, int index) {
                 final album = albums[index];

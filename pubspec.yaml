@@ -34,12 +34,13 @@ dependencies:
   flutter_audio_query:
     git:
       url: https://github.com/dqhieuu/flutter_audio_query
+      ref: non-null-safety
   rxdart: ^0.25.0
   marquee: ^1.7.0
   scrobblenaut:
     git:
       url: https://github.com/dqhieuu/Scrobblenaut
-      ref: publish
+      ref: non-null-safety
   cached_network_image: ^2.5.1
   hive: ^1.4.4+1
   hive_flutter: ^0.3.1
@@ -50,6 +51,7 @@ dependencies:
   settings_ui: ^0.6.0
   ext_storage: ^1.0.3
   multi_select_item: ^1.0.3
+  multi_select_flutter: ^3.1.8
 
 
 dev_dependencies:
