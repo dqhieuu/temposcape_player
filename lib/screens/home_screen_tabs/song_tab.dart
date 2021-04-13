@@ -127,7 +127,7 @@ class _SongTabState extends State<SongTab> {
   }
 
   Future<void> _addToFavorites(List<SongInfo> songs) async {
-    _addToPlaylists(songs, [Constants.favoritesPlaylist]);
+    _addToPlaylists(songs, [Constants.favoritesPlaylistHiveBox]);
     showSnackBar(context, text: 'Added ${songs.length} songs to favorites.');
     _deselectAllSongs();
   }
@@ -144,11 +144,12 @@ class _SongTabState extends State<SongTab> {
                 return Container();
               }
               final playlists = snapshot.data
-                  .where((e) => e.name != Constants.favoritesPlaylist);
+                  .where((e) => e.name != Constants.favoritesPlaylistHiveBox);
               return MultiSelectDialog(
                 title: Text('Add to playlists'),
                 items: playlists
-                    .map((e) => msDialog.MultiSelectItem(e, e.name))
+                    .map((playlist) => msDialog.MultiSelectItem(
+                        playlist, playlistName(playlist)))
                     .toList(),
                 initialValue: [],
                 onConfirm: (values) {
@@ -165,7 +166,9 @@ class _SongTabState extends State<SongTab> {
                 },
                 selectedItemsTextStyle: Theme.of(context).textTheme.headline6,
                 itemsTextStyle: Theme.of(context).textTheme.headline6,
-                checkColor: Theme.of(context).primaryColor,
+                checkColor: Theme.of(context).brightness == Brightness.light
+                    ? Colors.white
+                    : Colors.black,
                 selectedColor: Theme.of(context).accentColor,
                 unselectedColor: Theme.of(context).textTheme.bodyText1.color,
               );
@@ -254,45 +257,55 @@ class _SongTabState extends State<SongTab> {
           if (!_multiSelectController.isSelecting) {
             _multiSelectController.set(_songs.length);
           }
-          return ListView.builder(
-              itemCount: _songs.length,
-              reverse: widget.reverseOrder,
-              itemBuilder: (BuildContext context, int index) {
-                return MultiSelectItem(
-                  isSelecting: _multiSelectController.isSelecting,
-                  onSelected: () {
-                    setState(() {
-                      _multiSelectController.toggle(index);
-                    });
-                    updateParentAppBar();
-                  },
-                  child: Container(
-                    child: SongListTile(
-                      song: songInfoToMediaItem(_songs[index]),
-                      onTap: () async {
-                        if (_multiSelectController.isSelecting) {
+          return StreamBuilder<MediaItem>(
+              stream: AudioService.currentMediaItemStream,
+              builder: (context, snapshot) {
+                final currentMediaItem = snapshot.data;
+                return ListView.builder(
+                    itemCount: _songs.length,
+                    reverse: widget.reverseOrder,
+                    itemBuilder: (_, int index) {
+                      return MultiSelectItem(
+                        isSelecting: _multiSelectController.isSelecting,
+                        onSelected: () {
                           setState(() {
                             _multiSelectController.toggle(index);
                           });
                           updateParentAppBar();
-                          return;
-                        }
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MainPlayerScreen()),
-                        );
-                        await AudioService.updateQueue(
-                            _songs.map(songInfoToMediaItem).toList());
-                        await AudioService.skipToQueueItem(_songs[index].id);
-                        AudioService.play();
-                      },
-                    ),
-                    decoration: _multiSelectController.isSelected(index)
-                        ? new BoxDecoration(color: Colors.red[300])
-                        : null,
-                  ),
-                );
+                        },
+                        child: Container(
+                          child: SongListTile(
+                            song: songInfoToMediaItem(_songs[index]),
+                            onTap: () async {
+                              if (_multiSelectController.isSelecting) {
+                                setState(() {
+                                  _multiSelectController.toggle(index);
+                                });
+                                updateParentAppBar();
+                                return;
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => MainPlayerScreen()),
+                              );
+                              await AudioService.updateQueue(
+                                  _songs.map(songInfoToMediaItem).toList());
+                              await AudioService.skipToQueueItem(
+                                  _songs[index].id);
+                              AudioService.play();
+                            },
+                            selected: currentMediaItem?.id == _songs[index].id,
+                          ),
+                          decoration: _multiSelectController.isSelected(index)
+                              ? new BoxDecoration(
+                                  color: Theme.of(context)
+                                      .accentColor
+                                      .withOpacity(0.4))
+                              : null,
+                        ),
+                      );
+                    });
               });
         });
   }

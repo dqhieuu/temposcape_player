@@ -1,10 +1,15 @@
 import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:marquee/marquee.dart';
+import 'package:temposcape_player/screens/online_search_screen.dart';
 import 'package:temposcape_player/utils/duration_to_string.dart';
 
 import '../constants/constants.dart' as Constants;
@@ -109,7 +114,7 @@ class SongListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      key: Key(song.id),
+      key: key,
       leading: RoundedImage(
         image: song?.artUri != null
             ? ((song?.extras ?? {})['isOnline'] ?? false
@@ -118,6 +123,7 @@ class SongListTile extends StatelessWidget {
             : AssetImage(Constants.defaultImagePath),
         width: 50,
         height: 50,
+        borderRadius: BorderRadius.circular(10),
       ),
       onTap: onTap,
       title: Text(
@@ -182,25 +188,76 @@ class MyGridTile extends StatelessWidget {
   }
 }
 
+class MyMarquee extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  final double fontSize;
+  final double width;
+  final double height;
+  final Alignment alignment;
+
+  MyMarquee(this.text,
+      {this.width,
+      @required this.height,
+      this.style,
+      this.fontSize,
+      this.alignment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: alignment,
+      child: AutoSizeText(
+        text,
+        minFontSize: fontSize,
+        maxFontSize: fontSize,
+        style: style,
+        overflowReplacement: Marquee(
+          text: text,
+          pauseAfterRound: Duration(seconds: 1),
+          blankSpace: 60,
+          velocity: 30,
+          fadingEdgeStartFraction: 0.15,
+          fadingEdgeEndFraction: 0.15,
+          style: style,
+        ),
+      ),
+      width: width,
+      height: height,
+    );
+  }
+}
+
 class NullTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      Icon(
-        Icons.not_interested,
-        size: 40,
-      ),
-      Text('There\'s nothing here!'),
-      RichText(
-          text: TextSpan(children: <TextSpan>[
-        TextSpan(text: 'Consider adding some music to your music folder, or '),
-        TextSpan(
-          text: 'download some songs here',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+    return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (MediaQuery.of(context).orientation == Orientation.portrait) ...[
+            SvgPicture.asset(
+              'assets/empty_screen.svg',
+            ),
+            Padding(padding: EdgeInsets.only(bottom: 20.0)),
+          ],
+          Text(
+            'There\'s nothing here!',
+            style: TextStyle(fontSize: 24),
           ),
-        ),
-      ]))
-    ]);
+          Padding(padding: EdgeInsets.only(bottom: 4.0)),
+          Text(
+            'Download more songs from ',
+            style: TextStyle(color: Theme.of(context).textTheme.caption.color),
+          ),
+          Padding(padding: EdgeInsets.only(bottom: 4.0)),
+          ElevatedButton(
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (context) => OnlineSearchScreen())),
+            child: Text(
+              'Online song search',
+            ),
+          )
+        ]);
   }
 }

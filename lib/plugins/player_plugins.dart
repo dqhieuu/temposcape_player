@@ -49,10 +49,14 @@ class OnlineSong {
 abstract class BasePlayerPlugin {
   final String title;
   final String pluginTableInDatabase;
+  final bool allowEmptySearch;
   Image icon;
 
   BasePlayerPlugin(
-      {@required this.title, @required this.pluginTableInDatabase, this.icon}) {
+      {@required this.title,
+      @required this.pluginTableInDatabase,
+      this.icon,
+      this.allowEmptySearch = false}) {
     Hive.openBox(pluginTableInDatabase);
   }
 

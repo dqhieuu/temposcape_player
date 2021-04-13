@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:expandable_text/expandable_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -76,13 +77,11 @@ class _ArtistScreenState extends State<ArtistScreen> {
                 artistImage =
                     Image.file(File(widget.artistInput.artistArtPath)).image;
               } else {
-                artistImage = AssetImage(Constants.defaultImagePath);
+                artistImage = AssetImage(Constants.defaultArtistPath);
               }
-
-              final artistBio = (artistInfo?.bio?.summary ??
-                      artistCache?.bioSummary ??
-                      'No biography')
-                  .replaceAll(
+              final artistBio =
+                  (artistInfo?.bio?.summary ?? artistCache?.bioSummary ?? '')
+                      .replaceAll(
                 RegExp(r'<a.*<\/a>'),
                 '',
               );
@@ -91,101 +90,167 @@ class _ArtistScreenState extends State<ArtistScreen> {
                   ArtCoverHeader(
                     height: 220,
                     image: artistImage,
-                    content: Row(
-                      children: [
-                        Image(
-                          image: artistImage,
-                          fit: BoxFit.cover,
-                          width: 120,
-                          height: 160,
-                        ),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.artistInput.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                'Albums: ${widget.artistInput.numberOfAlbums}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                'Tracks: ${widget.artistInput.numberOfTracks}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                    content: IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          RoundedImage(
+                            image: artistImage,
+                            width: 120,
+                            height: 160,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                        )
-                      ],
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.artistInput.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: 10),
+                                  ),
+                                  Text(
+                                    'Albums: ${widget.artistInput.numberOfAlbums}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .caption
+                                          .color,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Tracks: ${widget.artistInput.numberOfTracks}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .caption
+                                          .color,
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  if (artistInfo?.stats != null) ...[
+                                    Text(
+                                      'Play count: ${artistInfo.stats.playCount}',
+                                    ),
+                                    Text(
+                                      'Listeners: ${artistInfo.stats.listeners}',
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ExpandableText(
+                      artistBio,
+                      expandText: 'show more',
+                      collapseText: 'show less',
+                      maxLines: 3,
+                      linkColor: Colors.blue,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'Albums',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: FutureBuilder<List<AlbumInfo>>(
+                      future: audioQuery.getAlbumsFromArtist(
+                          artist: widget.artistInput.name),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return Container();
+                        final albums = snapshot.data;
+                        return Container(
+                          height: 150,
+                          child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: albums
+                                      ?.map((album) => GestureDetector(
+                                            child: Container(
+                                              width: 100,
+                                              child: Column(
+                                                children: [
+                                                  AspectRatio(
+                                                    aspectRatio: 1,
+                                                    child: RoundedImage(
+                                                      image: album.albumArt !=
+                                                              null
+                                                          ? Image.file(File(album
+                                                                  .albumArt))
+                                                              .image
+                                                          : AssetImage(Constants
+                                                              .defaultAlbumPath),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    album.title,
+                                                    textAlign: TextAlign.center,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 2,
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  )
+                                                ],
+                                              ),
+                                            ),
+                                            onTap: () {
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          AlbumScreen(
+                                                            albumInput: album,
+                                                          )));
+                                            },
+                                          ))
+                                      ?.toList() ??
+                                  []),
+                        );
+                      },
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(artistBio),
+                        Text(
+                          'Songs',
+                          style: TextStyle(fontSize: 24),
+                        ),
+                        Divider()
                       ],
                     ),
                   ),
-                  Text('Albums'),
-                  FutureBuilder<List<AlbumInfo>>(
-                    future: audioQuery.getAlbumsFromArtist(
-                        artist: widget.artistInput.name),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) return Container();
-                      final albums = snapshot.data;
-                      return Container(
-                        height: 150,
-                        child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: albums
-                                    ?.map((album) => MyGridTile(
-                                          child: Container(
-                                            width: 100,
-                                            child: Column(
-                                              children: [
-                                                Image(
-                                                  image: album.albumArt != null
-                                                      ? Image.file(File(
-                                                              album.albumArt))
-                                                          .image
-                                                      : AssetImage(Constants
-                                                          .defaultAlbumPath),
-                                                ),
-                                                Text(
-                                                  album.title,
-                                                  textAlign: TextAlign.center,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 2,
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                          onTap: () {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        AlbumScreen(
-                                                          albumInput: album,
-                                                        )));
-                                          },
-                                        ))
-                                    ?.toList() ??
-                                []),
-                      );
-                    },
-                  ),
-                  Text('Tracks'),
                   FutureBuilder<List<SongInfo>>(
                     future: audioQuery.getSongsFromArtist(
                         artistId: widget.artistInput.id),
@@ -193,32 +258,36 @@ class _ArtistScreenState extends State<ArtistScreen> {
                       if (!snapshot.hasData) return Container();
                       final songs =
                           snapshot.data.map(songInfoToMediaItem).toList();
-                      return Column(
-                          children: songs
-                                  ?.map((MediaItem song) => SongListTile(
-                                        song: song,
-                                        onTap: () async {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    MainPlayerScreen()),
-                                          );
-                                          await AudioService.updateQueue(
-                                              songs.toList());
-                                          await AudioService.skipToQueueItem(
-                                              song.id);
-                                          AudioService.play();
-                                        },
-                                        // selected:
-                                        //     (snapshot.data?.currentSource?.tag)
-                                        //             ?.filePath ==
-                                        //         song.filePath,
-                                      ))
-                                  ?.toList() ??
-                              []);
+                      return StreamBuilder<MediaItem>(
+                          stream: AudioService.currentMediaItemStream,
+                          builder: (context, snapshot) {
+                            final currentMediaItem = snapshot.data;
+                            return Column(
+                                children: songs
+                                        ?.map((MediaItem song) => SongListTile(
+                                              song: song,
+                                              onTap: () async {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          MainPlayerScreen()),
+                                                );
+                                                await AudioService.updateQueue(
+                                                    songs.toList());
+                                                await AudioService
+                                                    .skipToQueueItem(song.id);
+                                                AudioService.play();
+                                              },
+                                              selected: currentMediaItem?.id ==
+                                                  song.id,
+                                            ))
+                                        ?.toList() ??
+                                    []);
+                          });
                     },
                   ),
+                  SizedBox(height: 60),
                 ],
               );
             }));

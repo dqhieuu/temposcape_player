@@ -38,52 +38,59 @@ class _ArtistTabState extends State<ArtistTab> {
           if (artists == null || artists.isEmpty) {
             return NullTab();
           }
-          return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 5,
-              mainAxisSpacing: 5,
-              childAspectRatio: 0.55,
-            ),
-            reverse: widget.reverseOrder,
-            itemCount: artists.length,
-            itemBuilder: (_, index) {
-              final artist = artists[index];
-              ImageProvider artistImage;
-              final cachedImage = Hive.box<ArtistCache>(ArtistCache.hiveBox)
-                  .get(artist.id)
-                  ?.imageBinary;
-              if (cachedImage != null) {
-                artistImage = Image.memory(cachedImage).image;
-              } else if (artist.artistArtPath != null) {
-                artistImage = Image.file(File(artist.artistArtPath)).image;
-              } else {
-                artistImage = AssetImage(Constants.defaultImagePath);
-              }
-              return MyGridTile(
-                child: Column(children: [
-                  AspectRatio(
-                    aspectRatio: 0.7,
-                    child: Image(
-                      image: artistImage,
-                      fit: BoxFit.cover,
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount:
+                    MediaQuery.of(context).orientation == Orientation.portrait
+                        ? 3
+                        : 5,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 8,
+                childAspectRatio: 0.55,
+              ),
+              reverse: widget.reverseOrder,
+              itemCount: artists.length,
+              itemBuilder: (_, index) {
+                final artist = artists[index];
+                ImageProvider artistImage;
+                final cachedImage = Hive.box<ArtistCache>(ArtistCache.hiveBox)
+                    .get(artist.id)
+                    ?.imageBinary;
+                if (cachedImage != null) {
+                  artistImage = Image.memory(cachedImage).image;
+                } else if (artist.artistArtPath != null) {
+                  artistImage = Image.file(File(artist.artistArtPath)).image;
+                } else {
+                  artistImage = AssetImage(Constants.defaultArtistPath);
+                }
+                return GestureDetector(
+                  child: Column(children: [
+                    AspectRatio(
+                      aspectRatio: 0.7,
+                      child: RoundedImage(
+                        image: artistImage,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                  ),
-                  Text(
-                    artist.name,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                  ),
-                ]),
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              ArtistScreen(artistInput: artist)));
-                },
-              );
-            },
+                    Text(artist.name,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        )),
+                  ]),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                ArtistScreen(artistInput: artist)));
+                  },
+                );
+              },
+            ),
           );
         });
   }

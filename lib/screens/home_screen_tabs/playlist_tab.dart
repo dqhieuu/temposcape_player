@@ -1,8 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:hive/hive.dart';
 import 'package:multi_select_item/multi_select_item.dart';
 import 'package:temposcape_player/screens/playlist_screen.dart';
+import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../../constants/constants.dart' as Constants;
@@ -28,6 +31,7 @@ class PlaylistTab extends StatefulWidget {
 class _PlaylistTabState extends State<PlaylistTab> {
   final _audioQuery = FlutterAudioQuery();
   final _multiSelectController = MultiSelectController();
+  final _playlistNamesBox = Hive.box<String>(Constants.playlistNamesHiveBox);
   var _playlists = <PlaylistInfo>[];
 
   void _showAddPlaylistDialog() {
@@ -65,6 +69,40 @@ class _PlaylistTabState extends State<PlaylistTab> {
     );
   }
 
+  void _showRenamePlaylistDialog(PlaylistInfo playlist) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final myController = TextEditingController();
+        return AlertDialog(
+          title: Text('Rename playlist'),
+          content: TextField(
+            controller: myController,
+            decoration: InputDecoration(
+              labelText: "Name",
+            ),
+          ),
+          actions: [
+            FlatButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            FlatButton(
+              onPressed: () async {
+                await _playlistNamesBox.put(playlist.name, myController.text);
+                Navigator.pop(context);
+                setState(() {});
+              },
+              child: const Text('Rename'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
   void _deselectAllPlaylists() {
     setState(() {
       _multiSelectController.deselectAll();
@@ -84,6 +122,7 @@ class _PlaylistTabState extends State<PlaylistTab> {
   void _deletePlaylists(List<PlaylistInfo> playlists) {
     for (PlaylistInfo playlist in playlists) {
       FlutterAudioQuery.removePlaylist(playlist: playlist);
+      _playlistNamesBox.delete(playlist.name);
     }
     setState(() {});
   }
@@ -112,17 +151,25 @@ class _PlaylistTabState extends State<PlaylistTab> {
                   _deletePlaylists(selectedPlaylists);
                   _deselectAllPlaylists();
                   break;
+                case 'renamePlaylist':
+                  _showRenamePlaylistDialog(selectedPlaylists.first);
+                  _deselectAllPlaylists();
               }
             },
             itemBuilder: (BuildContext context) {
               return [
+                if (_multiSelectController.selectedIndexes.length == 1)
+                  PopupMenuItem(
+                    value: 'renamePlaylist',
+                    child: const Text('Rename playlist...'),
+                  ),
                 PopupMenuItem(
                   value: 'emptyPlaylists',
-                  child: const Text('Empty playlists'),
+                  child: const Text('Empty playlist(s)'),
                 ),
                 PopupMenuItem(
                   value: 'deletePlaylists',
-                  child: const Text('Delete playlists'),
+                  child: const Text('Delete playlist(s)'),
                 ),
               ];
             },
@@ -140,16 +187,31 @@ class _PlaylistTabState extends State<PlaylistTab> {
       future: _audioQuery.getPlaylists(),
       builder: (context, snapshot) {
         _playlists = (widget.searchResult ?? snapshot.data)
-            ?.where((playlist) => playlist.name != Constants.favoritesPlaylist)
+            ?.where((playlist) =>
+                playlist.name != Constants.favoritesPlaylistHiveBox)
             ?.toList();
         if (_playlists == null || _playlists.isEmpty) {
           return Center(
             child: GestureDetector(
               onTap: _showAddPlaylistDialog,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IconButton(icon: Icon(Icons.add), onPressed: null),
-                  Text('Add a playlist here'),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Icon(
+                      CupertinoIcons.rectangle_stack_badge_plus,
+                      size: 64,
+                      color: Theme.of(context).textTheme.caption.color,
+                    ),
+                  ),
+                  Text(
+                    'Add a playlist...',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Theme.of(context).textTheme.caption.color,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -182,13 +244,18 @@ class _PlaylistTabState extends State<PlaylistTab> {
                       image: AssetImage(Constants.defaultImagePath),
                       width: 50,
                       height: 50,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    title: Text(
-                      playlist.name,
-                      maxLines: 1,
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                    title: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        playlistName(playlist),
+                        maxLines: 1,
+                        style: TextStyle(fontSize: 18),
+                      ),
                     ),
-                    subtitle: Text(
-                        'Total songs: ${playlist.memberIds.length.toString()}'),
                     onTap: () {
                       if (_multiSelectController.isSelecting) {
                         setState(() {
@@ -207,7 +274,8 @@ class _PlaylistTabState extends State<PlaylistTab> {
                   ),
                 ),
                 decoration: _multiSelectController.isSelected(index)
-                    ? new BoxDecoration(color: Colors.red[300])
+                    ? new BoxDecoration(
+                        color: Theme.of(context).accentColor.withOpacity(0.4))
                     : null,
               );
             },

@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:temposcape_player/plugins/online_radios_plugin.dart';
 import 'package:temposcape_player/plugins/plugins.dart';
 import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
@@ -37,6 +38,7 @@ class OnlineSongListTile extends StatelessWidget {
             : AssetImage(Constants.defaultImagePath),
         width: 50,
         height: 50,
+        borderRadius: BorderRadius.circular(10),
       ),
       onTap: onTap,
       title: Text(
@@ -69,7 +71,8 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
     ChiaSeNhacPlugin(),
     ZingMp3Plugin(),
     NhacCuaTuiPlugin(),
-    SoundCloudPlugin()
+    SoundCloudPlugin(),
+    OnlineRadiosPlugin(),
   ];
 
   _OnlineSearchScreenState() {
@@ -96,8 +99,8 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
 
   Future<void> _setListAccordingToText() async {
     _page = 1;
-    if (_searchValue.trim().isEmpty) {
-      print('noop');
+    if (_searchValue.trim().isEmpty &&
+        !(_currentPlugin != null && _currentPlugin.allowEmptySearch)) {
       _clearList();
     } else {
       _setList(await _currentPlugin.searchSong(_searchValue));
@@ -138,16 +141,22 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLightMode = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
       body: CustomScrollView(
         controller: _scrollController,
         slivers: <Widget>[
           SliverAppBar(
+            backgroundColor: isLightMode ? Color(0xFFEFEFEF) : null,
+            iconTheme: isLightMode ? IconThemeData(color: Colors.black) : null,
             pinned: true,
             snap: true,
             floating: true,
             expandedHeight: 155.0,
-            title: Text('Online song plugins'),
+            title: Text(
+              'Online song plugins',
+              style: isLightMode ? TextStyle(color: Colors.black) : null,
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 padding: EdgeInsets.fromLTRB(16, 0, 16, 8),

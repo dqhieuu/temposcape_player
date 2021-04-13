@@ -5,13 +5,14 @@ import 'dart:math';
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ext_storage/ext_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:temposcape_player/screens/song_queue_screen.dart';
+import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
 import '../utils/utils.dart';
@@ -51,156 +52,203 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Main player'),
-        actions: [
-          IconButton(icon: Icon(Icons.more_vert)),
-        ],
+        shadowColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
+        leading: GestureDetector(
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 48,
+            color: Theme.of(context).textTheme.bodyText1.color,
+          ),
+          onTap: () => Navigator.of(context).pop(),
+        ),
       ),
-      body: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              StreamBuilder<MediaItem>(
-                  stream: AudioService.currentMediaItemStream,
-                  builder: (context, snapshot) {
-                    return PlayerSongInfo(snapshot.data);
-                  }),
-              StreamBuilder<MediaItem>(
-                  stream: AudioService.currentMediaItemStream,
-                  builder: (context, snapshot) {
-                    final duration = snapshot.data?.duration ?? Duration.zero;
-                    return StreamBuilder<Duration>(
-                        stream: AudioService.positionStream,
-                        builder: (context, snapshot) {
-                          final position = snapshot.data ?? Duration.zero;
-                          return PlayerSeekBar(
-                            duration: duration,
-                            position: position,
-                            onChangeEnd: (value) {
-                              AudioService.seekTo(value);
-                            },
-                          );
-                        });
-                  }),
-              PlayerControlBar(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  StreamBuilder<MediaItem>(
-                      stream: AudioService.currentMediaItemStream,
-                      builder: (context, snapshot) {
-                        return (snapshot.data?.extras ?? {})['isOnline'] ??
-                                false
-                            ? IconButton(
-                                icon: Icon(Icons.download_rounded),
-                                onPressed: () async {
-                                  final mediaItem =
-                                      AudioService.currentMediaItem;
-                                  await _downloadMusicToPhone(
-                                      context,
-                                      (mediaItem?.extras ?? {})['uri'],
-                                      mediaItem?.title);
-                                })
-                            : FutureBuilder<List<PlaylistInfo>>(
-                                future: audioQuery.getPlaylists(),
+      body: StreamBuilder<MediaItem>(
+          stream: AudioService.currentMediaItemStream,
+          builder: (context, snapshot) {
+            final duration = snapshot.data?.duration ?? Duration.zero;
+            final song = snapshot.data;
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Flex(
+                direction:
+                    MediaQuery.of(context).orientation == Orientation.portrait
+                        ? Axis.vertical
+                        : Axis.horizontal,
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyText1
+                              .color
+                              .withOpacity(0.3),
+                          spreadRadius: 5,
+                          blurRadius: 12,
+                          offset: Offset(0, 0), // changes position of shadow
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      backgroundImage: (song?.artUri != null
+                          ? ((song?.extras ?? {})['isOnline'] ?? false
+                              ? CachedNetworkImageProvider(song.artUri)
+                              : Image.file(File(Uri.parse(song.artUri).path))
+                                  .image)
+                          : AssetImage(Constants.defaultImagePath)),
+                      radius: 140,
+                    ),
+                  ),
+                  const SizedBox(height: 30, width: 10),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            StreamBuilder<MediaItem>(
+                                stream: AudioService.currentMediaItemStream,
                                 builder: (context, snapshot) {
-                                  final favoritesPlaylist = snapshot.data
-                                      ?.where((element) =>
-                                          element.name ==
-                                          Constants.favoritesPlaylist)
-                                      ?.first;
-                                  if (favoritesPlaylist == null)
-                                    return Container();
-                                  return FutureBuilder<List<SongInfo>>(
-                                      future: audioQuery.getSongsFromPlaylist(
-                                          playlist: favoritesPlaylist),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.data == null)
-                                          return Container();
-                                        final currentSongTypeCasted =
-                                            AudioService.currentMediaItem !=
-                                                    null
-                                                ? mediaItemToSongInfo(
-                                                    AudioService
-                                                        .currentMediaItem)
-                                                : null;
-                                        bool hasCurrentSong = snapshot.data.any(
-                                            (element) =>
-                                                element.id ==
-                                                currentSongTypeCasted?.id);
-                                        if (hasCurrentSong) {
-                                          return IconButton(
-                                              icon: Icon(Icons.favorite),
-                                              onPressed: () async {
-                                                await favoritesPlaylist.removeSong(
-                                                    song:
-                                                        currentSongTypeCasted);
-                                                setState(() {});
-                                              });
-                                        }
-                                        return IconButton(
-                                            icon: Icon(Icons.favorite_border),
-                                            onPressed: () async {
-                                              await favoritesPlaylist.addSong(
-                                                  song: currentSongTypeCasted);
-                                              setState(() {});
-                                            });
-                                      });
-                                });
-                      }),
-                  IconButton(
-                      icon: Icon(Icons.queue_music),
-                      onPressed: () async {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SongQueueScreen()));
-                      }),
+                                  return (snapshot.data?.extras ??
+                                              {})['isOnline'] ??
+                                          false
+                                      ? IconButton(
+                                          icon: Icon(Icons.download_rounded),
+                                          onPressed: () async {
+                                            final mediaItem =
+                                                AudioService.currentMediaItem;
+                                            await _downloadMusicToPhone(
+                                                context,
+                                                (mediaItem?.extras ??
+                                                    {})['uri'],
+                                                mediaItem?.title);
+                                          })
+                                      : FutureBuilder<List<PlaylistInfo>>(
+                                          future: audioQuery.getPlaylists(),
+                                          builder: (context, snapshot) {
+                                            final favoritesPlaylist = snapshot
+                                                .data
+                                                ?.where((element) =>
+                                                    element.name ==
+                                                    Constants
+                                                        .favoritesPlaylistHiveBox)
+                                                ?.first;
+                                            if (favoritesPlaylist == null)
+                                              return Container();
+                                            return FutureBuilder<
+                                                    List<SongInfo>>(
+                                                future: audioQuery
+                                                    .getSongsFromPlaylist(
+                                                        playlist:
+                                                            favoritesPlaylist),
+                                                builder: (context, snapshot) {
+                                                  if (snapshot.data == null)
+                                                    return Container();
+                                                  final currentSongTypeCasted =
+                                                      AudioService.currentMediaItem !=
+                                                              null
+                                                          ? mediaItemToSongInfo(
+                                                              AudioService
+                                                                  .currentMediaItem)
+                                                          : null;
+                                                  bool hasCurrentSong = snapshot
+                                                      .data
+                                                      .any((element) =>
+                                                          element.id ==
+                                                          currentSongTypeCasted
+                                                              ?.id);
+                                                  if (hasCurrentSong) {
+                                                    return IconButton(
+                                                        icon: Icon(Icons
+                                                            .favorite_rounded),
+                                                        onPressed: () async {
+                                                          await favoritesPlaylist
+                                                              .removeSong(
+                                                                  song:
+                                                                      currentSongTypeCasted);
+                                                          setState(() {});
+                                                        });
+                                                  }
+                                                  return IconButton(
+                                                      icon: Icon(Icons
+                                                          .favorite_border_rounded),
+                                                      onPressed: () async {
+                                                        await favoritesPlaylist
+                                                            .addSong(
+                                                                song:
+                                                                    currentSongTypeCasted);
+                                                        setState(() {});
+                                                      });
+                                                });
+                                          });
+                                }),
+                            Column(
+                              children: [
+                                MyMarquee(
+                                  song?.title ?? 'No song played',
+                                  alignment: Alignment.center,
+                                  width: 250,
+                                  height: 35,
+                                  fontSize: 24,
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                  ),
+                                ),
+                                MyMarquee(
+                                  song?.artist ?? 'Source not found',
+                                  alignment: Alignment.center,
+                                  width: 250,
+                                  height: 25,
+                                  fontSize: 16,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .caption
+                                        .color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                                icon: Icon(Icons.queue_music),
+                                onPressed: () async {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              SongQueueScreen()));
+                                })
+                          ],
+                        ),
+                        StreamBuilder<Duration>(
+                            stream: AudioService.positionStream,
+                            builder: (context, snapshot) {
+                              final position = snapshot.data ?? Duration.zero;
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20.0),
+                                child: PlayerSeekBar(
+                                  duration: duration,
+                                  position: position,
+                                  onChangeEnd: (value) {
+                                    AudioService.seekTo(value);
+                                  },
+                                ),
+                              );
+                            }),
+                        PlayerControlBar(),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ],
-          )),
-    );
-  }
-}
-
-class PlayerSongInfo extends StatelessWidget {
-  final MediaItem song;
-
-  const PlayerSongInfo(
-    this.song, {
-    Key key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        CircleAvatar(
-          backgroundImage: (song?.artUri != null
-              ? ((song?.extras ?? {})['isOnline'] ?? false
-                  ? CachedNetworkImageProvider(song.artUri)
-                  : Image.file(File(Uri.parse(song.artUri).path)).image)
-              : AssetImage(Constants.defaultImagePath)),
-          radius: 120,
-        ),
-        Text(
-          song?.title ?? 'No song played',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          song?.artist ?? 'Source not found',
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).textTheme.caption.color,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+            );
+          }),
     );
   }
 }
@@ -228,11 +276,16 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          getFormattedDuration(
-            widget.position,
-            timeFormat: TimeFormat.optionalHours0Minutes0Seconds,
+        Container(
+          alignment: Alignment.center,
+          width: 60,
+          child: Text(
+            getFormattedDuration(
+              widget.position,
+              timeFormat: TimeFormat.optionalHours0Minutes0Seconds,
+            ),
           ),
         ),
         Expanded(
@@ -255,10 +308,14 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
             },
           ),
         ),
-        Text(
-          getFormattedDuration(
-            widget.duration,
-            timeFormat: TimeFormat.optionalHours0Minutes0Seconds,
+        Container(
+          alignment: Alignment.center,
+          width: 60,
+          child: Text(
+            getFormattedDuration(
+              widget.duration,
+              timeFormat: TimeFormat.optionalHours0Minutes0Seconds,
+            ),
           ),
         ),
       ],
@@ -279,45 +336,65 @@ class PlayerControlBar extends StatelessWidget {
           final isPlaying = snapshot.data?.playing ?? false;
 
           return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: Icon(shuffleMode == AudioServiceShuffleMode.all
-                    ? MdiIcons.shuffle
-                    : MdiIcons.shuffleDisabled),
-                onPressed: () {
-                  switch (shuffleMode) {
-                    case AudioServiceShuffleMode.all:
-                      AudioService.setShuffleMode(AudioServiceShuffleMode.none);
-                      showSnackBar(context, text: 'Shuffle OFF');
-                      break;
-                    case AudioServiceShuffleMode.none:
-                      AudioService.setShuffleMode(AudioServiceShuffleMode.all);
-                      showSnackBar(context, text: 'Shuffle ON');
-                      break;
-                    default:
-                      break;
-                  }
-                },
-              ),
-              IconButton(
-                onPressed: AudioService.skipToPrevious,
-                icon: Icon(FontAwesomeIcons.backward),
-              ),
-              IconButton(
-                icon: Icon(
-                    isPlaying ? FontAwesomeIcons.pause : FontAwesomeIcons.play),
-                onPressed: () {
-                  if (isPlaying) {
-                    AudioService.pause();
-                  } else {
-                    AudioService.play();
-                  }
-                },
-              ),
-              IconButton(
-                onPressed: AudioService.skipToNext,
-                icon: Icon(FontAwesomeIcons.forward),
+                  icon: Icon(shuffleMode == AudioServiceShuffleMode.all
+                      ? CupertinoIcons.shuffle
+                      : CupertinoIcons.shuffle),
+                  onPressed: () {
+                    switch (shuffleMode) {
+                      case AudioServiceShuffleMode.all:
+                        AudioService.setShuffleMode(
+                            AudioServiceShuffleMode.none);
+                        showSnackBar(context, text: 'Shuffle OFF');
+                        break;
+                      case AudioServiceShuffleMode.none:
+                        AudioService.setShuffleMode(
+                            AudioServiceShuffleMode.all);
+                        showSnackBar(context, text: 'Shuffle ON');
+                        break;
+                      default:
+                        break;
+                    }
+                  },
+                  color: shuffleMode == AudioServiceShuffleMode.none
+                      ? Theme.of(context)
+                          .textTheme
+                          .bodyText1
+                          .color
+                          .withOpacity(0.2)
+                      : null),
+              SizedBox(
+                width: 200,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      onPressed: AudioService.skipToPrevious,
+                      icon: Icon(FontAwesomeIcons.backward),
+                    ),
+                    GestureDetector(
+                      child: Icon(
+                        isPlaying
+                            ? Icons.pause_circle_filled_rounded
+                            : Icons.play_circle_filled_rounded,
+                        size: 60,
+                      ),
+                      onTap: () {
+                        if (isPlaying) {
+                          AudioService.pause();
+                        } else {
+                          AudioService.play();
+                        }
+                      },
+                    ),
+                    IconButton(
+                      onPressed: AudioService.skipToNext,
+                      icon: Icon(FontAwesomeIcons.forward),
+                    ),
+                  ],
+                ),
               ),
               IconButton(
                 onPressed: () {
@@ -340,13 +417,17 @@ class PlayerControlBar extends StatelessWidget {
                 },
                 icon: Icon(
                   repeatMode == AudioServiceRepeatMode.none
-                      ? Icons.repeat
+                      ? CupertinoIcons.repeat
                       : repeatMode == AudioServiceRepeatMode.all
-                          ? Icons.repeat
-                          : Icons.repeat_one,
+                          ? CupertinoIcons.repeat
+                          : CupertinoIcons.repeat_1,
                   color: repeatMode == AudioServiceRepeatMode.none
-                      ? Colors.red
-                      : Colors.white,
+                      ? Theme.of(context)
+                          .textTheme
+                          .bodyText1
+                          .color
+                          .withOpacity(0.2)
+                      : null,
                 ),
               ),
             ],

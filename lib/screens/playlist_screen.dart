@@ -1,10 +1,12 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:multi_select_item/multi_select_item.dart';
 import 'package:temposcape_player/utils/song_type_conversion.dart';
+import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
-import '../constants/constants.dart' as Constants;
 import 'main_player_screen.dart';
 
 class PlaylistScreen extends StatefulWidget {
@@ -18,76 +20,162 @@ class PlaylistScreen extends StatefulWidget {
 
 class _PlaylistScreenState extends State<PlaylistScreen> {
   final _audioQuery = FlutterAudioQuery();
+  final _multiSelectController = MultiSelectController();
+  var _songs = <SongInfo>[];
+
+  void _selectAllSongs() {
+    setState(() {
+      _multiSelectController.selectAll();
+    });
+  }
+
+  void _deselectAllSongs() {
+    setState(() {
+      _multiSelectController.deselectAll();
+    });
+  }
+
+  Future<void> _removeFromPlaylist(List<SongInfo> songs) async {
+    for (SongInfo song in songs) {
+      await widget.playlistInput.removeSong(song: song);
+    }
+    setState(() {});
+  }
+
+  Future<void> _addToQueue(List<SongInfo> songs) async {
+    await AudioService.addQueueItems(songs.map(songInfoToMediaItem).toList());
+    _deselectAllSongs();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-            // title: Text(widget.playlistInput.name),
-            ),
-        body: ListView(
-          children: [
-            ArtCoverHeader(
-              height: 220,
-              image: AssetImage(Constants.defaultImagePath),
-              content: Row(
-                children: [
-                  Image(
-                    image: AssetImage(Constants.defaultImagePath),
-                    fit: BoxFit.cover,
-                    width: 160,
-                    height: 160,
-                  ),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.playlistInput.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+          title: Text(_multiSelectController.isSelecting
+              ? '${_multiSelectController.selectedIndexes.length} selected'
+              : widget.playlistInput.name),
+          actions: [
+            if (_multiSelectController.isSelecting)
+              PopupMenuButton<String>(
+                onSelected: (str) {
+                  final selectedSongs = _multiSelectController.selectedIndexes
+                      .map((index) => _songs[index])
+                      .toList();
+                  switch (str) {
+                    case 'removeFromPlaylist':
+                      _removeFromPlaylist(selectedSongs);
+                      _deselectAllSongs();
+                      break;
+                    case 'addToQueue':
+                      _addToQueue(selectedSongs);
+                      _deselectAllSongs();
+                      break;
+                    case 'selectAll':
+                      _selectAllSongs();
+                      break;
+                    case 'deselectAll':
+                      _deselectAllSongs();
+                      break;
+                  }
+                },
+                itemBuilder: (_) {
+                  return [
+                    PopupMenuItem(
+                      value: 'removeFromPlaylist',
+                      child: const Text('Remove from Playlist'),
                     ),
-                  )
-                ],
-              ),
-            ),
-            Text('Tracks'),
-            FutureBuilder<List<SongInfo>>(
-              future: _audioQuery.getSongsFromPlaylist(
-                  playlist: widget.playlistInput),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return Container();
-                final songs = snapshot.data.map(songInfoToMediaItem).toList();
-                return Column(
-                    children: songs
-                            ?.map((MediaItem song) => SongListTile(
-                                  song: song,
-                                  onTap: () async {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              MainPlayerScreen()),
-                                    );
-                                    await AudioService.updateQueue(
-                                        songs.toList());
-                                    await AudioService.skipToQueueItem(song.id);
-                                    AudioService.play();
-                                  },
-                                  // selected:
-                                  //     (snapshot.data?.currentSource?.tag)
-                                  //             ?.filePath ==
-                                  //         song.filePath,
-                                ))
-                            ?.toList() ??
-                        []);
-              },
-            ),
+                    PopupMenuItem(
+                      value: 'addToQueue',
+                      child: const Text('Add to Queue'),
+                    ),
+                    PopupMenuItem(
+                      value: 'selectAll',
+                      child: const Text('Select all'),
+                    ),
+                    PopupMenuItem(
+                      value: 'deselectAll',
+                      child: const Text('Deselect all'),
+                    ),
+                  ];
+                },
+              )
           ],
-        ));
+        ),
+        body: FutureBuilder<List<SongInfo>>(
+            future: _audioQuery.getSongsFromPlaylist(
+                playlist: widget.playlistInput),
+            builder: (context, snapshot) {
+              _songs = snapshot.data?.toList();
+
+              if (_songs == null || _songs.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/empty_screen.svg',
+                      ),
+                      Padding(padding: EdgeInsets.only(bottom: 20.0)),
+                      Text(
+                        'There are no songs in this playlist',
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (!_multiSelectController.isSelecting) {
+                _multiSelectController.set(_songs.length);
+              }
+              return StreamBuilder<MediaItem>(
+                stream: AudioService.currentMediaItemStream,
+                builder: (context, snapshot) {
+                  final currentMediaItem = snapshot.data;
+                  return ListView.builder(
+                      itemCount: _songs.length,
+                      itemBuilder: (_, int index) => Container(
+                            child: MultiSelectItem(
+                              isSelecting: _multiSelectController.isSelecting,
+                              onSelected: () {
+                                setState(() {
+                                  _multiSelectController.toggle(index);
+                                });
+                              },
+                              child: SongListTile(
+                                song: songInfoToMediaItem(_songs[index]),
+                                onTap: () async {
+                                  if (_multiSelectController.isSelecting) {
+                                    setState(() {
+                                      _multiSelectController.toggle(index);
+                                    });
+                                    return;
+                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            MainPlayerScreen()),
+                                  );
+                                  await AudioService.updateQueue(
+                                      _songs.map(songInfoToMediaItem).toList());
+                                  await AudioService.skipToQueueItem(
+                                      _songs[index].id);
+                                  AudioService.play();
+                                },
+                                selected:
+                                    currentMediaItem?.id == _songs[index].id,
+                              ),
+                            ),
+                            decoration: _multiSelectController.isSelected(index)
+                                ? new BoxDecoration(
+                                    color: Theme.of(context)
+                                        .accentColor
+                                        .withOpacity(0.4))
+                                : null,
+                          ));
+                },
+              );
+            }));
   }
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
@@ -38,7 +39,8 @@ class SongQueueScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Un-shuffle the player
-    if (AudioService.playbackState.shuffleMode == AudioServiceShuffleMode.all) {
+    if (AudioService.playbackState != null &&
+        AudioService.playbackState.shuffleMode == AudioServiceShuffleMode.all) {
       AudioService.customAction('makeShuffledOrderUnshuffledOrder');
     }
 
@@ -47,12 +49,39 @@ class SongQueueScreen extends StatelessWidget {
         builder: (context, snapshot) {
           final queue = snapshot.data;
           return Scaffold(
-            appBar: AppBar(),
+            appBar: AppBar(
+              title: Text('Song queue'),
+              actions: [
+                IconButton(
+                    icon: Icon(
+                      Icons.cleaning_services,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      AudioService.updateQueue(<MediaItem>[]);
+                    })
+              ],
+            ),
             body: StreamBuilder<MediaItem>(
                 stream: AudioService.currentMediaItemStream,
                 builder: (context, snapshot) {
                   if (queue == null || queue.isEmpty) {
-                    return Container();
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/empty_screen.svg',
+                          ),
+                          Padding(padding: EdgeInsets.only(bottom: 20.0)),
+                          Text(
+                            'There are no songs in the queue',
+                            style: TextStyle(fontSize: 20),
+                          ),
+                        ],
+                      ),
+                    );
                   }
                   final currentMediaItem = snapshot.data;
                   return ReorderableListView(
@@ -93,6 +122,10 @@ class SongQueueScreen extends StatelessWidget {
                                 children: [
                                   IconButton(
                                       icon: Icon(Icons.close),
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .caption
+                                          .color,
                                       onPressed: () {
                                         AudioService.removeQueueItem(song);
                                       }),

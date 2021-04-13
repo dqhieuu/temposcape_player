@@ -36,45 +36,56 @@ class _AlbumTabState extends State<AlbumTab> {
           if (albums == null || albums.isEmpty) {
             return NullTab();
           }
-          return GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount:
-                    MediaQuery.of(context).orientation == Orientation.portrait
-                        ? 3
-                        : 5,
-                crossAxisSpacing: 5,
-                mainAxisSpacing: 5,
-                childAspectRatio: 0.75,
-              ),
-              reverse: widget.reverseOrder,
-              itemCount: albums.length,
-              itemBuilder: (_, int index) {
-                final album = albums[index];
-                return MyGridTile(
-                  child: Column(
-                    children: [
-                      albums[index].albumArt != null
-                          ? Image.file(File(album.albumArt))
-                          : Image(
-                              image: AssetImage(Constants.defaultAlbumPath),
-                            ),
-                      Text(
-                        album.title,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                      )
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => AlbumScreen(
-                                  albumInput: album,
-                                )));
-                  },
-                );
-              });
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount:
+                      MediaQuery.of(context).orientation == Orientation.portrait
+                          ? 3
+                          : 5,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.73,
+                ),
+                reverse: widget.reverseOrder,
+                itemCount: albums.length,
+                itemBuilder: (_, int index) {
+                  final album = albums[index];
+                  return GestureDetector(
+                    child: Column(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1.0,
+                          child: RoundedImage(
+                            image: album.albumArt != null
+                                ? Image.file(File(album.albumArt)).image
+                                : AssetImage(Constants.defaultAlbumPath),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        Text(
+                          album.title,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AlbumScreen(
+                                    albumInput: album,
+                                  )));
+                    },
+                  );
+                }),
+          );
         });
   }
 }

@@ -15,11 +15,6 @@ class AudioPlayerTask extends BackgroundAudioTask {
   ConcatenatingAudioSource _audioSource;
   var _queue = <MediaItem>[];
 
-  var _shuffledQueue = <MediaItem>[];
-
-  List<MediaItem> get currentQueue =>
-      _shuffleMode == AudioServiceShuffleMode.none ? _queue : _shuffledQueue;
-
   @override
   Future<void> onPlay() => _player.play();
 
@@ -189,7 +184,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     });
 
     _player.currentIndexStream.listen((index) {
-      if (index == null || index < 0) return null;
+      if (index == null || index < 0 || _queue.isEmpty) return null;
       AudioServiceBackground.setMediaItem(_queue[index]);
     });
 

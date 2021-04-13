@@ -1,14 +1,16 @@
 import 'dart:core';
-import 'dart:ui';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:scrobblenaut/scrobblenaut.dart';
 import 'package:temposcape_player/models/artist_cache.dart';
+import 'package:temposcape_player/models/settings_model.dart';
 import 'package:temposcape_player/screens/home_screen.dart';
 import 'package:temposcape_player/services/audio_player_task.dart';
 
@@ -21,11 +23,17 @@ void main() async {
   Scrobblenaut(lastFM: LastFM.noAuth(apiKey: Constants.lastFmApiKey));
   // Init Hive database
   await Hive.initFlutter();
+  await Hive.openBox<dynamic>(SettingsModel.hiveBox);
+
   Hive.registerAdapter(ArtistCacheAdapter());
   await Hive.openBox<ArtistCache>(ArtistCache.hiveBox);
-  Hive.openBox<String>(Constants.cachedGenres);
+
+  await Hive.openBox<String>(Constants.playlistNamesHiveBox);
   // Run main app
-  runApp(MyApp());
+  runApp(ChangeNotifierProvider(
+    create: (context) => SettingsModel(),
+    child: MyApp(),
+  ));
 }
 
 void _audioPlayerTaskEntryPoint() =>
@@ -39,27 +47,43 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      localizationsDelegates: [
-        S.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: S.delegate.supportedLocales,
-      home: AudioServiceWidget(child: HomeScreen()),
+    final lightTheme = ThemeData(primarySwatch: Colors.deepPurple);
+    final darkTheme = ThemeData.dark().copyWith(
+      backgroundColor: Colors.black87,
+    );
+
+    return Consumer<SettingsModel>(
+      builder: (_, settings, __) {
+        final currentTheme = settings.darkMode ? darkTheme : lightTheme;
+        return MaterialApp(
+          title: Constants.appName,
+          theme: currentTheme.copyWith(
+            textTheme: GoogleFonts.montserratTextTheme(currentTheme.textTheme),
+            appBarTheme: AppBarTheme(
+              textTheme: TextTheme().apply(
+                fontFamily: GoogleFonts.montserrat().fontFamily,
+              ),
+            ),
+          ),
+          localizationsDelegates: [
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: S.delegate.supportedLocales,
+          home: AudioServiceWidget(child: HomeScreen()),
+        );
+      },
     );
   }
 
   @override
   void initState() {
     AudioService.connect();
-    AudioService.start(backgroundTaskEntrypoint: _audioPlayerTaskEntryPoint);
+    AudioService.start(
+        backgroundTaskEntrypoint: _audioPlayerTaskEntryPoint,
+        androidNotificationIcon: 'drawable/ic_stat_app');
     super.initState();
 
     SongSortType.DEFAULT;
