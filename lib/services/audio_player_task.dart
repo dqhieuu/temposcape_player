@@ -188,10 +188,6 @@ class AudioPlayerTask extends BackgroundAudioTask {
       AudioServiceBackground.setMediaItem(_queue[index]);
     });
 
-    _player.shuffleModeEnabledStream.listen((event) {});
-
-    _player.loopModeStream.listen((event) {});
-
     // This sets the duration of the audio file to player's duration
     // if duration info is null.
     _player.durationStream.listen((duration) async {

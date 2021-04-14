@@ -237,7 +237,9 @@ class NullTab extends StatelessWidget {
         children: [
           if (MediaQuery.of(context).orientation == Orientation.portrait) ...[
             SvgPicture.asset(
-              'assets/empty_screen.svg',
+              Theme.of(context).brightness == Brightness.light
+                  ? 'assets/empty_screen.svg'
+                  : 'assets/empty_screen_dark.svg',
             ),
             Padding(padding: EdgeInsets.only(bottom: 20.0)),
           ],
@@ -258,6 +260,33 @@ class NullTab extends StatelessWidget {
               'Online song search',
             ),
           )
+        ]);
+  }
+}
+
+class NullTabCustomText extends StatelessWidget {
+  final String text;
+
+  NullTabCustomText(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (MediaQuery.of(context).orientation == Orientation.portrait) ...[
+            SvgPicture.asset(
+              Theme.of(context).brightness == Brightness.light
+                  ? 'assets/empty_screen.svg'
+                  : 'assets/empty_screen_dark.svg',
+            ),
+            Padding(padding: EdgeInsets.only(bottom: 20.0)),
+          ],
+          Text(
+            text,
+            style: TextStyle(fontSize: 24),
+          ),
         ]);
   }
 }

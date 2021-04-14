@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
@@ -71,14 +70,7 @@ class SongQueueScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          SvgPicture.asset(
-                            'assets/empty_screen.svg',
-                          ),
-                          Padding(padding: EdgeInsets.only(bottom: 20.0)),
-                          Text(
-                            'There are no songs in the queue',
-                            style: TextStyle(fontSize: 20),
-                          ),
+                          NullTabCustomText('There are no songs in the queue'),
                         ],
                       ),
                     );

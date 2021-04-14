@@ -289,23 +289,36 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
           ),
         ),
         Expanded(
-          child: Slider(
-            min: 0,
-            max: widget.duration.inMilliseconds.toDouble(),
-            value: _dragValue ??
-                min(widget.position.inMilliseconds.toDouble(),
-                    widget.duration.inMilliseconds.toDouble()),
-            onChanged: (double value) {
-              setState(() {
-                _dragValue = value;
-              });
-            },
-            onChangeEnd: (double value) {
-              _dragValue = null;
-              if (widget.onChangeEnd != null) {
-                widget.onChangeEnd(Duration(milliseconds: value.round()));
-              }
-            },
+          child: SliderTheme(
+            data: SliderThemeData.fromPrimaryColors(
+              primaryColor: Theme.of(context).accentColor,
+              primaryColorDark: Theme.of(context).accentColor,
+              primaryColorLight: Theme.of(context).accentColor,
+              valueIndicatorTextStyle: TextStyle(),
+            ).copyWith(
+              thumbShape: RoundSliderThumbShape(
+                enabledThumbRadius: 6,
+                disabledThumbRadius: 6,
+              ),
+            ),
+            child: Slider(
+              min: 0,
+              max: widget.duration.inMilliseconds.toDouble(),
+              value: _dragValue ??
+                  min(widget.position.inMilliseconds.toDouble(),
+                      widget.duration.inMilliseconds.toDouble()),
+              onChanged: (double value) {
+                setState(() {
+                  _dragValue = value;
+                });
+              },
+              onChangeEnd: (double value) {
+                _dragValue = null;
+                if (widget.onChangeEnd != null) {
+                  widget.onChangeEnd(Duration(milliseconds: value.round()));
+                }
+              },
+            ),
           ),
         ),
         Container(

@@ -1,7 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:multi_select_item/multi_select_item.dart';
 import 'package:temposcape_player/utils/song_type_conversion.dart';
 import 'package:temposcape_player/utils/utils.dart';
@@ -113,14 +112,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SvgPicture.asset(
-                        'assets/empty_screen.svg',
-                      ),
-                      Padding(padding: EdgeInsets.only(bottom: 20.0)),
-                      Text(
-                        'There are no songs in this playlist',
-                        style: TextStyle(fontSize: 20),
-                      ),
+                      NullTabCustomText('There are no songs in this playlist'),
                     ],
                   ),
                 );
