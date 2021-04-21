@@ -3,38 +3,11 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
 import '../constants/constants.dart' as Constants;
 
 class SongQueueScreen extends StatelessWidget {
-  /// Player state shouldn't be shuffled (randomized) when you have
-  /// seen the song order. (Schrodinger's cat approved :3)
-  ///
-  /// This method un-shuffles the player and reloads the song
-  /// queue in pre-unshuffled order (mainly because it's such a
-  /// hassle to deal with song indices all over the place).
-  void _reorderSongsToShuffleIndices(AudioPlayer player) async {
-    // final newSongOrder = player?.sequenceState?.effectiveSequence;
-    // final currentlyPlayedItem = newSongOrder[player.effectiveIndices
-    //     .indexWhere((element) => player.currentIndex == element)];
-    // final currentlyPlayedPosition = player.position;
-    // await player.setShuffleModeEnabled(false);
-    // await player
-    //     .setAudioSource(ConcatenatingAudioSource(children: newSongOrder));
-    // player.seek(currentlyPlayedPosition,
-    //     index: newSongOrder.indexOf(currentlyPlayedItem));
-
-    // final newSongOrder = AudioService.queue;
-    // final currentlyPlayedItem = AudioService.currentMediaItem;
-    // // final currentlyPlayedPosition = AudioService.positionStream;
-    // await AudioService.setShuffleMode(AudioServiceShuffleMode.none);
-    // await AudioService.updateQueue(newSongOrder);
-    // // AudioService.(AudioService.positionStream,
-    // //     index: newSongOrder.indexOf(currentlyPlayedItem));
-  }
-
   @override
   Widget build(BuildContext context) {
     // Un-shuffle the player
@@ -107,7 +80,7 @@ class SongQueueScreen extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            selected: currentMediaItem?.id == song.id,
+                            selected: currentMediaItem == song,
                             trailing: Container(
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,

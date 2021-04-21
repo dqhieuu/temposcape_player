@@ -62,6 +62,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   ScrollController _scrollController;
   BasePlayerPlugin _currentPlugin;
 
+  int _lastSearchTimestamp;
   int _page = 1;
   String _searchValue = '';
   bool _hasReachedEnd = false;
@@ -98,12 +99,21 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   }
 
   Future<void> _setListAccordingToText() async {
+    final thisSearchTimestamp = DateTime.now().millisecondsSinceEpoch;
+    _lastSearchTimestamp = thisSearchTimestamp;
     _page = 1;
+
     if (_searchValue.trim().isEmpty &&
         !(_currentPlugin != null && _currentPlugin.allowEmptySearch)) {
       _clearList();
     } else {
-      _setList(await _currentPlugin.searchSong(_searchValue));
+      // This takes a long time to resolve, that's why we need to check if this is the latest search
+      final songData = await _currentPlugin.searchSong(_searchValue);
+      if (_lastSearchTimestamp != null &&
+          _lastSearchTimestamp > thisSearchTimestamp) {
+        return;
+      }
+      _setList(songData);
       _scrollController.animateTo(
         _scrollController.position.minScrollExtent,
         duration: Duration(milliseconds: 100),

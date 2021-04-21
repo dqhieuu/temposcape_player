@@ -241,7 +241,7 @@ class _PlaylistTabState extends State<PlaylistTab> {
                   },
                   child: ListTile(
                     leading: RoundedImage(
-                      image: AssetImage(Constants.defaultImagePath),
+                      image: AssetImage(Constants.playlistThumbnail),
                       width: 50,
                       height: 50,
                       borderRadius: BorderRadius.circular(8),

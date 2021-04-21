@@ -46,6 +46,14 @@ class OnlineRadiosPlugin extends BasePlayerPlugin {
         albumArtUrl: 'http://anison.fm/images/main_maskot_spring.png',
         songUrl: () => getSongUrl('https://pool.anison.fm/AniSonFM(320)'),
       ),
+      OnlineSong(
+        title: 'LISTEN.moe',
+        artist: 'Anison broadcasting',
+        albumThumbnailUrl:
+            'https://listen.moe/_nuxt/img/logo-square-64.248c1f3.png',
+        albumArtUrl: 'https://listen.moe/_nuxt/img/logo-square-64.248c1f3.png',
+        songUrl: () => getSongUrl('https://listen.moe/stream'),
+      ),
     ];
   }
 }

@@ -358,25 +358,25 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-class WidgetWithRightArrow extends StatelessWidget {
-  final Widget child;
-
-  const WidgetWithRightArrow({
-    this.child,
-    Key key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        child,
-        Spacer(),
-        Icon(Icons.arrow_right, size: 30.0),
-      ],
-    );
-  }
-}
+// class WidgetWithRightArrow extends StatelessWidget {
+//   final Widget child;
+//
+//   const WidgetWithRightArrow({
+//     this.child,
+//     Key key,
+//   }) : super(key: key);
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       children: [
+//         child,
+//         Spacer(),
+//         Icon(Icons.arrow_right, size: 30.0),
+//       ],
+//     );
+//   }
+// }
 
 class MiniPlayer extends StatelessWidget {
   @override
@@ -390,7 +390,17 @@ class MiniPlayer extends StatelessWidget {
       },
       child: Container(
         height: 60,
-        decoration: BoxDecoration(color: Theme.of(context).bottomAppBarColor),
+        decoration: BoxDecoration(
+          color: Theme.of(context).bottomAppBarColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 4,
+              spreadRadius: 1,
+              offset: Offset(0, 0),
+            )
+          ],
+        ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
           child: StreamBuilder<MediaItem>(

@@ -2,7 +2,6 @@ import 'dart:core';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
@@ -86,49 +85,49 @@ class _MyAppState extends State<MyApp> {
         androidNotificationIcon: 'drawable/ic_stat_app');
     super.initState();
 
-    SongSortType.DEFAULT;
-    SongSortType.CURRENT_IDs_ORDER;
-    SongSortType.ALPHABETIC_ALBUM;
-    SongSortType.ALPHABETIC_ARTIST;
-    SongSortType.ALPHABETIC_COMPOSER;
-    SongSortType.DISPLAY_NAME;
-    SongSortType.GREATER_DURATION;
-    SongSortType.SMALLER_DURATION;
-    SongSortType.GREATER_TRACK_NUMBER;
-    SongSortType.SMALLER_TRACK_NUMBER;
-    SongSortType.RECENT_YEAR;
-    SongSortType.OLDEST_YEAR;
-
-    AlbumSortType.DEFAULT;
-    AlbumSortType.CURRENT_IDs_ORDER;
-    AlbumSortType.ALPHABETIC_ARTIST_NAME;
-    AlbumSortType.MORE_SONGS_NUMBER_FIRST;
-    AlbumSortType.LESS_SONGS_NUMBER_FIRST;
-    AlbumSortType.MOST_RECENT_YEAR;
-    AlbumSortType.OLDEST_YEAR;
-
-    ArtistSortType.DEFAULT;
-    ArtistSortType.CURRENT_IDs_ORDER;
-    ArtistSortType.MORE_ALBUMS_NUMBER_FIRST;
-    ArtistSortType.LESS_ALBUMS_NUMBER_FIRST;
-    ArtistSortType.MORE_TRACKS_NUMBER_FIRST;
-    ArtistSortType.LESS_TRACKS_NUMBER_FIRST;
-
-    SongSortType.DEFAULT;
-    SongSortType.ALPHABETIC_ALBUM;
-    SongSortType.ALPHABETIC_ARTIST;
-    SongSortType.DISPLAY_NAME;
-    SongSortType.SMALLER_DURATION;
-    SongSortType.OLDEST_YEAR;
-
-    AlbumSortType.DEFAULT;
-    AlbumSortType.ALPHABETIC_ARTIST_NAME;
-    AlbumSortType.LESS_SONGS_NUMBER_FIRST;
-    AlbumSortType.OLDEST_YEAR;
-
-    ArtistSortType.DEFAULT;
-    ArtistSortType.LESS_ALBUMS_NUMBER_FIRST;
-    ArtistSortType.LESS_TRACKS_NUMBER_FIRST;
+    // SongSortType.DEFAULT;
+    // SongSortType.CURRENT_IDs_ORDER;
+    // SongSortType.ALPHABETIC_ALBUM;
+    // SongSortType.ALPHABETIC_ARTIST;
+    // SongSortType.ALPHABETIC_COMPOSER;
+    // SongSortType.DISPLAY_NAME;
+    // SongSortType.GREATER_DURATION;
+    // SongSortType.SMALLER_DURATION;
+    // SongSortType.GREATER_TRACK_NUMBER;
+    // SongSortType.SMALLER_TRACK_NUMBER;
+    // SongSortType.RECENT_YEAR;
+    // SongSortType.OLDEST_YEAR;
+    //
+    // AlbumSortType.DEFAULT;
+    // AlbumSortType.CURRENT_IDs_ORDER;
+    // AlbumSortType.ALPHABETIC_ARTIST_NAME;
+    // AlbumSortType.MORE_SONGS_NUMBER_FIRST;
+    // AlbumSortType.LESS_SONGS_NUMBER_FIRST;
+    // AlbumSortType.MOST_RECENT_YEAR;
+    // AlbumSortType.OLDEST_YEAR;
+    //
+    // ArtistSortType.DEFAULT;
+    // ArtistSortType.CURRENT_IDs_ORDER;
+    // ArtistSortType.MORE_ALBUMS_NUMBER_FIRST;
+    // ArtistSortType.LESS_ALBUMS_NUMBER_FIRST;
+    // ArtistSortType.MORE_TRACKS_NUMBER_FIRST;
+    // ArtistSortType.LESS_TRACKS_NUMBER_FIRST;
+    //
+    // SongSortType.DEFAULT;
+    // SongSortType.ALPHABETIC_ALBUM;
+    // SongSortType.ALPHABETIC_ARTIST;
+    // SongSortType.DISPLAY_NAME;
+    // SongSortType.SMALLER_DURATION;
+    // SongSortType.OLDEST_YEAR;
+    //
+    // AlbumSortType.DEFAULT;
+    // AlbumSortType.ALPHABETIC_ARTIST_NAME;
+    // AlbumSortType.LESS_SONGS_NUMBER_FIRST;
+    // AlbumSortType.OLDEST_YEAR;
+    //
+    // ArtistSortType.DEFAULT;
+    // ArtistSortType.LESS_ALBUMS_NUMBER_FIRST;
+    // ArtistSortType.LESS_TRACKS_NUMBER_FIRST;
   }
 
   @override

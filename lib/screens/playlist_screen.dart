@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
@@ -6,6 +8,7 @@ import 'package:temposcape_player/utils/song_type_conversion.dart';
 import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
+import '../constants/constants.dart' as Constants;
 import 'main_player_screen.dart';
 
 class PlaylistScreen extends StatefulWidget {
@@ -49,10 +52,27 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(_multiSelectController.isSelecting
-              ? '${_multiSelectController.selectedIndexes.length} selected'
-              : widget.playlistInput.name),
+        body: CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          expandedHeight: 160.0,
+          flexibleSpace: FlexibleSpaceBar(
+            title: Text(
+              _multiSelectController.isSelecting
+                  ? '${_multiSelectController.selectedIndexes.length} selected'
+                  : widget.playlistInput.name,
+            ),
+            background: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+              child: Image(
+                image: AssetImage(
+                  Constants.playlistBgPath,
+                ),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
           actions: [
             if (_multiSelectController.isSelecting)
               PopupMenuButton<String>(
@@ -100,20 +120,23 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               )
           ],
         ),
-        body: FutureBuilder<List<SongInfo>>(
+        FutureBuilder<List<SongInfo>>(
             future: _audioQuery.getSongsFromPlaylist(
                 playlist: widget.playlistInput),
             builder: (context, snapshot) {
               _songs = snapshot.data?.toList();
 
               if (_songs == null || _songs.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      NullTabCustomText('There are no songs in this playlist'),
-                    ],
+                return SliverToBoxAdapter(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        NullTabCustomText(
+                            'There are no songs in this playlist'),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -124,50 +147,53 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                 stream: AudioService.currentMediaItemStream,
                 builder: (context, snapshot) {
                   final currentMediaItem = snapshot.data;
-                  return ListView.builder(
-                      itemCount: _songs.length,
-                      itemBuilder: (_, int index) => Container(
-                            child: MultiSelectItem(
-                              isSelecting: _multiSelectController.isSelecting,
-                              onSelected: () {
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, int index) => Container(
+                        child: MultiSelectItem(
+                          isSelecting: _multiSelectController.isSelecting,
+                          onSelected: () {
+                            setState(() {
+                              _multiSelectController.toggle(index);
+                            });
+                          },
+                          child: SongListTile(
+                            song: songInfoToMediaItem(_songs[index]),
+                            onTap: () async {
+                              if (_multiSelectController.isSelecting) {
                                 setState(() {
                                   _multiSelectController.toggle(index);
                                 });
-                              },
-                              child: SongListTile(
-                                song: songInfoToMediaItem(_songs[index]),
-                                onTap: () async {
-                                  if (_multiSelectController.isSelecting) {
-                                    setState(() {
-                                      _multiSelectController.toggle(index);
-                                    });
-                                    return;
-                                  }
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            MainPlayerScreen()),
-                                  );
-                                  await AudioService.updateQueue(
-                                      _songs.map(songInfoToMediaItem).toList());
-                                  await AudioService.skipToQueueItem(
-                                      _songs[index].id);
-                                  AudioService.play();
-                                },
-                                selected:
-                                    currentMediaItem?.id == _songs[index].id,
-                              ),
-                            ),
-                            decoration: _multiSelectController.isSelected(index)
-                                ? new BoxDecoration(
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.4))
-                                : null,
-                          ));
+                                return;
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => MainPlayerScreen()),
+                              );
+                              await AudioService.updateQueue(
+                                  _songs.map(songInfoToMediaItem).toList());
+                              await AudioService.skipToQueueItem(
+                                  _songs[index].id);
+                              AudioService.play();
+                            },
+                            selected: currentMediaItem?.id == _songs[index].id,
+                          ),
+                        ),
+                        decoration: _multiSelectController.isSelected(index)
+                            ? new BoxDecoration(
+                                color: Theme.of(context)
+                                    .accentColor
+                                    .withOpacity(0.4))
+                            : null,
+                      ),
+                      childCount: _songs.length,
+                    ),
+                  );
                 },
               );
-            }));
+            })
+      ],
+    ));
   }
 }
