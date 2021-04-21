@@ -133,79 +133,71 @@ class _AlbumScreenState extends State<AlbumScreen> {
                       ],
                     ),
                   ),
-                  StreamBuilder<MediaItem>(
-                      stream: AudioService.currentMediaItemStream,
-                      builder: (context, snapshot) {
-                        final currentMediaItem = snapshot.data;
-                        return FutureBuilder<List<SongInfo>>(
-                          future: audioQuery.getSongsFromAlbum(
-                              albumId: widget.albumInput.id),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) return Container();
-                            final songs =
-                                snapshot.data.map(songInfoToMediaItem).toList();
-                            return Column(
-                                children: songs
-                                        ?.map(
-                                          (MediaItem song) => ListTile(
-                                            leading: Text(
-                                                (songs.indexOf(song) + 1)
-                                                    .toString()
-                                                    .padLeft(2, "0"),
-                                                style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Theme.of(context)
-                                                      .textTheme
-                                                      .caption
-                                                      .color,
-                                                )),
-                                            title: Text(
-                                              song.title,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            trailing: Text(
-                                              getFormattedDuration(
-                                                  song.duration,
-                                                  timeFormat: TimeFormat
-                                                      .optionalHoursMinutes0Seconds),
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .caption
-                                                    .color,
-                                              ),
-                                            ),
-                                            onTap: () async {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        MainPlayerScreen()),
-                                              );
-                                              await AudioService.updateQueue(
-                                                  songs.toList());
-                                              await AudioService
-                                                  .skipToQueueItem(song.id);
-                                              AudioService.play();
-                                            },
-                                            selected:
-                                                currentMediaItem?.id == song.id,
-                                          ),
-                                        )
-                                        ?.toList() ??
-                                    []);
-                          },
-                        );
-                      }),
+                  buildTrackList(),
+                  // # Footer space
                   SizedBox(height: 60),
                 ],
               );
             }));
+  }
+
+  StreamBuilder<MediaItem> buildTrackList() {
+    return StreamBuilder<MediaItem>(
+        stream: AudioService.currentMediaItemStream,
+        builder: (context, snapshot) {
+          final currentMediaItem = snapshot.data;
+          return FutureBuilder<List<SongInfo>>(
+            future: audioQuery.getSongsFromAlbum(albumId: widget.albumInput.id),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return Container();
+              final songs = snapshot.data.map(songInfoToMediaItem).toList();
+              return Column(
+                  children: songs
+                      .map(
+                        (MediaItem song) => ListTile(
+                          leading: Text(
+                              (songs.indexOf(song) + 1)
+                                  .toString()
+                                  .padLeft(2, "0"),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    Theme.of(context).textTheme.caption.color,
+                              )),
+                          title: Text(
+                            song.title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: Text(
+                            getFormattedDuration(song.duration,
+                                timeFormat:
+                                    TimeFormat.optionalHoursMinutes0Seconds),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(context).textTheme.caption.color,
+                            ),
+                          ),
+                          onTap: () async {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => MainPlayerScreen()),
+                            );
+                            await AudioService.updateQueue(songs.toList());
+                            await AudioService.skipToQueueItem(song.id);
+                            AudioService.play();
+                          },
+                          selected: currentMediaItem?.id == song.id,
+                        ),
+                      )
+                      .toList());
+            },
+          );
+        });
   }
 }

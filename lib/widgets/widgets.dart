@@ -264,10 +264,10 @@ class NullTab extends StatelessWidget {
   }
 }
 
-class NullTabCustomText extends StatelessWidget {
+class NullTabWithCustomText extends StatelessWidget {
   final String text;
 
-  NullTabCustomText(this.text);
+  NullTabWithCustomText(this.text);
 
   @override
   Widget build(BuildContext context) {

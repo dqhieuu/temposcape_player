@@ -120,7 +120,7 @@ class _FavoriteTabState extends State<FavoriteTab> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        NullTabCustomText('You have 0 favorite songs'),
+        NullTabWithCustomText('You have 0 favorite songs'),
       ],
     );
   }
@@ -157,51 +157,53 @@ class _FavoriteTabState extends State<FavoriteTab> {
                         reverse: widget.reverseOrder,
                         itemBuilder: (_, index) {
                           final song = _songs[index];
-                          return Container(
-                            child: MultiSelectItem(
-                              isSelecting: _multiSelectController.isSelecting,
-                              onSelected: () {
-                                setState(() {
-                                  _multiSelectController.toggle(index);
-                                });
-                                updateParentAppBar();
-                              },
-                              child: SongListTile(
-                                song: songInfoToMediaItem(song),
-                                onTap: () async {
-                                  if (_multiSelectController.isSelecting) {
-                                    setState(() {
-                                      _multiSelectController.toggle(index);
-                                    });
-                                    updateParentAppBar();
-                                    return;
-                                  }
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            MainPlayerScreen()),
-                                  );
-                                  await AudioService.updateQueue(
-                                      _songs.map(songInfoToMediaItem).toList());
-                                  await AudioService.skipToQueueItem(song.id);
-                                  AudioService.play();
-                                },
-                                selected: currentMediaItem?.id == song.id,
-                              ),
-                            ),
-                            decoration: _multiSelectController.isSelected(index)
-                                ? new BoxDecoration(
-                                    color: Theme.of(context)
-                                        .accentColor
-                                        .withOpacity(0.4),
-                                  )
-                                : null,
-                          );
+                          return buildFavoriteTile(
+                              index, song, context, currentMediaItem);
                         },
                       );
                     });
               });
         });
+  }
+
+  Widget buildFavoriteTile(int index, SongInfo song, BuildContext context,
+      MediaItem currentMediaItem) {
+    return Container(
+      child: MultiSelectItem(
+        isSelecting: _multiSelectController.isSelecting,
+        onSelected: () {
+          setState(() {
+            _multiSelectController.toggle(index);
+          });
+          updateParentAppBar();
+        },
+        child: SongListTile(
+          song: songInfoToMediaItem(song),
+          onTap: () async {
+            if (_multiSelectController.isSelecting) {
+              setState(() {
+                _multiSelectController.toggle(index);
+              });
+              updateParentAppBar();
+              return;
+            }
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MainPlayerScreen()),
+            );
+            await AudioService.updateQueue(
+                _songs.map(songInfoToMediaItem).toList());
+            await AudioService.skipToQueueItem(song.id);
+            AudioService.play();
+          },
+          selected: currentMediaItem?.id == song.id,
+        ),
+      ),
+      decoration: _multiSelectController.isSelected(index)
+          ? new BoxDecoration(
+              color: Theme.of(context).accentColor.withOpacity(0.4),
+            )
+          : null,
+    );
   }
 }

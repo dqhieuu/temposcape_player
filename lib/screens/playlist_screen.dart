@@ -61,7 +61,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
             title: Text(
               _multiSelectController.isSelecting
                   ? '${_multiSelectController.selectedIndexes.length} selected'
-                  : widget.playlistInput.name,
+                  : playlistName(widget.playlistInput),
             ),
             background: ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
@@ -129,13 +129,16 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               if (_songs == null || _songs.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        NullTabCustomText(
-                            'There are no songs in this playlist'),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          NullTabWithCustomText(
+                              'There are no songs in this playlist'),
+                        ],
+                      ),
                     ),
                   ),
                 );

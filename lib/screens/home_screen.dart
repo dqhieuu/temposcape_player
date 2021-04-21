@@ -249,66 +249,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       appBar: _multiSelectBar ?? _searchBar.build(context),
       resizeToAvoidBottomInset: false,
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    'assets/logo_line.svg',
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                  Text(
-                    Constants.appName,
-                    style: TextStyle(fontSize: 20),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home_rounded),
-              title: Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.search_rounded),
-              title: Text('Online search'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => OnlineSearchScreen()));
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.queue_music_rounded),
-              title: Text('Queue'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => SongQueueScreen()));
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings_rounded),
-              title: Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => SettingsScreen()));
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: buildDrawer(context),
       body: Column(
         children: [
           Expanded(
@@ -352,6 +293,69 @@ class _HomeScreenState extends State<HomeScreen>
                 ]),
           ),
           MiniPlayer(),
+        ],
+      ),
+    );
+  }
+
+  Drawer buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/logo_line.svg',
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black,
+                ),
+                Text(
+                  Constants.appName,
+                  style: TextStyle(fontSize: 20),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.home_rounded),
+            title: Text('Home'),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.search_rounded),
+            title: Text('Online search'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => OnlineSearchScreen()));
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.queue_music_rounded),
+            title: Text('Queue'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => SongQueueScreen()));
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.settings_rounded),
+            title: Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => SettingsScreen()));
+            },
+          ),
         ],
       ),
     );

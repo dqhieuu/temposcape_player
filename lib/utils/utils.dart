@@ -32,5 +32,3 @@ String truncateText(String text, [int length = 20]) =>
 final _playlistNamesBox = Hive.box<String>(Constants.playlistNamesHiveBox);
 String playlistName(PlaylistInfo playlist) =>
     _playlistNamesBox.get(playlist.name) ?? playlist.name;
-
-void renamePlaylist({String playlist, String name}) {}

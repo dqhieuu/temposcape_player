@@ -114,6 +114,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
         return;
       }
       _setList(songData);
+      // Scroll to top on new search
       _scrollController.animateTo(
         _scrollController.position.minScrollExtent,
         duration: Duration(milliseconds: 100),

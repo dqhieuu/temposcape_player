@@ -68,17 +68,22 @@ class _ArtistScreenState extends State<ArtistScreen> {
               }
 
               ImageProvider artistImage;
+              // Image from the Internet
               if (artistInfo?.images?.first?.text != null) {
                 artistImage =
                     CachedNetworkImageProvider(artistInfo.images.first.text);
+                // Image from the database
               } else if (artistCache?.imageBinary != null) {
                 artistImage = Image.memory(artistCache.imageBinary).image;
+                // System designated image
               } else if (widget.artistInput.artistArtPath != null) {
                 artistImage =
                     Image.file(File(widget.artistInput.artistArtPath)).image;
+                // Default image
               } else {
                 artistImage = AssetImage(Constants.defaultArtistPath);
               }
+              // Remove HTML tags from bio
               final artistBio =
                   (artistInfo?.bio?.summary ?? artistCache?.bioSummary ?? '')
                       .replaceAll(
@@ -184,58 +189,7 @@ class _ArtistScreenState extends State<ArtistScreen> {
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) return Container();
                         final albums = snapshot.data;
-                        return Container(
-                          height: 150,
-                          child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: albums
-                                      ?.map((album) => GestureDetector(
-                                            child: Container(
-                                              width: 100,
-                                              child: Column(
-                                                children: [
-                                                  AspectRatio(
-                                                    aspectRatio: 1,
-                                                    child: RoundedImage(
-                                                      image: album.albumArt !=
-                                                              null
-                                                          ? Image.file(File(album
-                                                                  .albumArt))
-                                                              .image
-                                                          : AssetImage(Constants
-                                                              .defaultAlbumPath),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    album.title,
-                                                    textAlign: TextAlign.center,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    maxLines: 2,
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            ),
-                                            onTap: () {
-                                              Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          AlbumScreen(
-                                                            albumInput: album,
-                                                          )));
-                                            },
-                                          ))
-                                      ?.toList() ??
-                                  []),
-                        );
+                        return buildAlbumList(albums, context);
                       },
                     ),
                   ),
@@ -291,5 +245,51 @@ class _ArtistScreenState extends State<ArtistScreen> {
                 ],
               );
             }));
+  }
+
+  Widget buildAlbumList(List<AlbumInfo> albums, BuildContext context) {
+    return Container(
+      height: 150,
+      child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: albums
+                  ?.map((album) => GestureDetector(
+                        child: Container(
+                          width: 100,
+                          child: Column(
+                            children: [
+                              AspectRatio(
+                                aspectRatio: 1,
+                                child: RoundedImage(
+                                  image: album.albumArt != null
+                                      ? Image.file(File(album.albumArt)).image
+                                      : AssetImage(Constants.defaultAlbumPath),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              Text(
+                                album.title,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AlbumScreen(
+                                        albumInput: album,
+                                      )));
+                        },
+                      ))
+                  ?.toList() ??
+              []),
+    );
   }
 }

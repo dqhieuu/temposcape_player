@@ -10,7 +10,7 @@ import '../constants/constants.dart' as Constants;
 class SongQueueScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Un-shuffle the player
+    // Un-shuffle the player to previously shuffled position for less complexity
     if (AudioService.playbackState != null &&
         AudioService.playbackState.shuffleMode == AudioServiceShuffleMode.all) {
       AudioService.customAction('makeShuffledOrderUnshuffledOrder');
@@ -43,7 +43,8 @@ class SongQueueScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          NullTabCustomText('There are no songs in the queue'),
+                          NullTabWithCustomText(
+                              'There are no songs in the queue'),
                         ],
                       ),
                     );
@@ -53,62 +54,8 @@ class SongQueueScreen extends StatelessWidget {
                     children: queue
                         .toList()
                         .map(
-                          (song) => ListTile(
-                            key: UniqueKey(),
-                            leading: RoundedImage(
-                              image: song.artUri != null
-                                  ? ((song.extras ?? {})['isOnline'] ?? false
-                                      ? CachedNetworkImageProvider(song.artUri)
-                                      : Image.file(
-                                              File(Uri.parse(song.artUri).path))
-                                          .image)
-                                  : AssetImage(Constants.defaultImagePath),
-                              width: 50,
-                              height: 50,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            onTap: () {
-                              AudioService.skipToQueueItem(song.id);
-                            },
-                            title: Text(
-                              song.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Text(
-                              song.artist,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            selected: currentMediaItem == song,
-                            trailing: Container(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                      icon: Icon(Icons.close),
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .caption
-                                          .color,
-                                      onPressed: () {
-                                        AudioService.removeQueueItem(song);
-                                      }),
-                                  Container(
-                                    child: Icon(
-                                      Icons.drag_handle,
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyText1
-                                          .color,
-                                      size: 36,
-                                    ),
-                                    padding: EdgeInsets.only(left: 20.0),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          (song) =>
+                              buildListTile(song, currentMediaItem, context),
                         )
                         .toList(),
                     onReorder: (int oldIndex, int newIndex) async {
@@ -122,5 +69,57 @@ class SongQueueScreen extends StatelessWidget {
                 }),
           );
         });
+  }
+
+  Widget buildListTile(
+      MediaItem song, MediaItem currentMediaItem, BuildContext context) {
+    return ListTile(
+      key: UniqueKey(),
+      leading: RoundedImage(
+        image: song.artUri != null
+            ? ((song.extras ?? {})['isOnline'] ?? false
+                ? CachedNetworkImageProvider(song.artUri)
+                : Image.file(File(Uri.parse(song.artUri).path)).image)
+            : AssetImage(Constants.defaultImagePath),
+        width: 50,
+        height: 50,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      onTap: () {
+        AudioService.skipToQueueItem(song.id);
+      },
+      title: Text(
+        song.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        song.artist,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      selected: currentMediaItem == song,
+      trailing: Container(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+                icon: Icon(Icons.close),
+                color: Theme.of(context).textTheme.caption.color,
+                onPressed: () {
+                  AudioService.removeQueueItem(song);
+                }),
+            Container(
+              child: Icon(
+                Icons.drag_handle,
+                color: Theme.of(context).textTheme.bodyText1.color,
+                size: 36,
+              ),
+              padding: EdgeInsets.only(left: 20.0),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

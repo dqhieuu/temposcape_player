@@ -65,33 +65,37 @@ class _ArtistTabState extends State<ArtistTab> {
                 } else {
                   artistImage = AssetImage(Constants.defaultArtistPath);
                 }
-                return GestureDetector(
-                  child: Column(children: [
-                    AspectRatio(
-                      aspectRatio: 0.7,
-                      child: RoundedImage(
-                        image: artistImage,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    Text(artist.name,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        )),
-                  ]),
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                ArtistScreen(artistInput: artist)));
-                  },
-                );
+                return buildArtistTile(artistImage, artist, context);
               },
             ),
           );
         });
+  }
+
+  Widget buildArtistTile(ImageProvider<Object> artistImage, ArtistInfo artist,
+      BuildContext context) {
+    return GestureDetector(
+      child: Column(children: [
+        AspectRatio(
+          aspectRatio: 0.7,
+          child: RoundedImage(
+            image: artistImage,
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        Text(artist.name,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            )),
+      ]),
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => ArtistScreen(artistInput: artist)));
+      },
+    );
   }
 }

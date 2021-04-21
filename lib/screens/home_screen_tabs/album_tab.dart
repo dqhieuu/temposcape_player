@@ -52,40 +52,44 @@ class _AlbumTabState extends State<AlbumTab> {
                 itemCount: albums.length,
                 itemBuilder: (_, int index) {
                   final album = albums[index];
-                  return GestureDetector(
-                    child: Column(
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 1.0,
-                          child: RoundedImage(
-                            image: album.albumArt != null
-                                ? Image.file(File(album.albumArt)).image
-                                : AssetImage(Constants.defaultAlbumPath),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        Text(
-                          album.title,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => AlbumScreen(
-                                    albumInput: album,
-                                  )));
-                    },
-                  );
+                  return _buildAlbumTile(album, context);
                 }),
           );
         });
+  }
+
+  Widget _buildAlbumTile(AlbumInfo album, BuildContext context) {
+    return GestureDetector(
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1.0,
+            child: RoundedImage(
+              image: album.albumArt != null
+                  ? Image.file(File(album.albumArt)).image
+                  : AssetImage(Constants.defaultAlbumPath),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          Text(
+            album.title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          )
+        ],
+      ),
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => AlbumScreen(
+                      albumInput: album,
+                    )));
+      },
+    );
   }
 }

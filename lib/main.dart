@@ -2,7 +2,6 @@ import 'dart:core';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -14,7 +13,6 @@ import 'package:temposcape_player/screens/home_screen.dart';
 import 'package:temposcape_player/services/audio_player_task.dart';
 
 import 'constants/constants.dart' as Constants;
-import 'generated/l10n.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
@@ -29,8 +27,10 @@ void main() async {
 
   await Hive.openBox<String>(Constants.playlistNamesHiveBox);
   // Run main app
-  runApp(ChangeNotifierProvider(
-    create: (context) => SettingsModel(),
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => SettingsModel()),
+    ],
     child: MyApp(),
   ));
 }
@@ -47,9 +47,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final lightTheme = ThemeData(primarySwatch: Colors.deepPurple);
-    final darkTheme = ThemeData.dark().copyWith(
-      backgroundColor: Colors.black87,
-    );
+    final darkTheme = ThemeData.dark();
 
     return Consumer<SettingsModel>(
       builder: (_, settings, __) {
@@ -64,13 +62,13 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
           ),
-          localizationsDelegates: [
-            S.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: S.delegate.supportedLocales,
+          // localizationsDelegates: [
+          //   S.delegate,
+          //   GlobalMaterialLocalizations.delegate,
+          //   GlobalWidgetsLocalizations.delegate,
+          //   GlobalCupertinoLocalizations.delegate,
+          // ],
+          // supportedLocales: S.delegate.supportedLocales,
           home: AudioServiceWidget(child: HomeScreen()),
         );
       },
