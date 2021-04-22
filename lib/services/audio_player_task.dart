@@ -160,6 +160,11 @@ class AudioPlayerTask extends BackgroundAudioTask {
   Future<void> onStart(Map<String, dynamic> params) async {
     // Listen to state changes on the player...
     _player.playerStateStream.listen((playerState) {
+      // Seek to the beginning of file and pause the player when reaching end of queue
+      if (playerState.processingState == ProcessingState.completed) {
+        _player.pause();
+        _player.seek(Duration.zero);
+      }
       // ... and forward them to all audio_service clients.
       AudioServiceBackground.setState(
         playing: playerState.playing,
