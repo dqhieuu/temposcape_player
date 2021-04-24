@@ -49,6 +49,27 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     _deselectAllSongs();
   }
 
+  void _showWhereToAddSongsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add songs to playlist'),
+          content: Text(
+              'To add more songs to this playlist, please go to the "Songs" tab from the home screen.'),
+          actions: [
+            FlatButton(
+              onPressed: () {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: const Text('Ok'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,31 +95,38 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
             ),
           ),
           actions: [
-            if (_multiSelectController.isSelecting)
-              PopupMenuButton<String>(
-                onSelected: (str) {
-                  final selectedSongs = _multiSelectController.selectedIndexes
-                      .map((index) => _songs[index])
-                      .toList();
-                  switch (str) {
-                    case 'removeFromPlaylist':
-                      _removeFromPlaylist(selectedSongs);
-                      _deselectAllSongs();
-                      break;
-                    case 'addToQueue':
-                      _addToQueue(selectedSongs);
-                      _deselectAllSongs();
-                      break;
-                    case 'selectAll':
-                      _selectAllSongs();
-                      break;
-                    case 'deselectAll':
-                      _deselectAllSongs();
-                      break;
-                  }
-                },
-                itemBuilder: (_) {
-                  return [
+            PopupMenuButton<String>(
+              onSelected: (str) {
+                final selectedSongs = _multiSelectController.selectedIndexes
+                    .map((index) => _songs[index])
+                    .toList();
+                switch (str) {
+                  case 'addSongs':
+                    _showWhereToAddSongsDialog();
+                    break;
+                  case 'removeFromPlaylist':
+                    _removeFromPlaylist(selectedSongs);
+                    _deselectAllSongs();
+                    break;
+                  case 'addToQueue':
+                    _addToQueue(selectedSongs);
+                    _deselectAllSongs();
+                    break;
+                  case 'selectAll':
+                    _selectAllSongs();
+                    break;
+                  case 'deselectAll':
+                    _deselectAllSongs();
+                    break;
+                }
+              },
+              itemBuilder: (_) {
+                return [
+                  PopupMenuItem(
+                    value: 'addSongs',
+                    child: const Text('Add more songs...'),
+                  ),
+                  if (_multiSelectController.isSelecting) ...[
                     PopupMenuItem(
                       value: 'removeFromPlaylist',
                       child: const Text('Remove from Playlist'),
@@ -115,9 +143,10 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                       value: 'deselectAll',
                       child: const Text('Deselect all'),
                     ),
-                  ];
-                },
-              )
+                  ]
+                ];
+              },
+            )
           ],
         ),
         FutureBuilder<List<SongInfo>>(
