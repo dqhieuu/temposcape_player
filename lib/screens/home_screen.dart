@@ -112,9 +112,32 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  // search by both song name and artist name
   void searchSongs(String value) async {
-    _searchResult =
-        value != null ? await _audioQuery.searchSongs(query: value) : null;
+    if (value == null) {
+      _searchResult = null;
+      return;
+    }
+
+    final songsMatched = await _audioQuery.searchSongs(query: value);
+
+    final artistsMatched = await _audioQuery.searchArtists(query: value);
+    final songsArtistMatched = <SongInfo>[];
+    await Future.forEach(artistsMatched, (artist) async {
+      songsArtistMatched
+          .addAll(await _audioQuery.getSongsFromArtist(artistId: artist.id));
+    });
+
+    final uniqueMap = <String, SongInfo>{};
+    for (var song in songsMatched) {
+      uniqueMap[song.id] = song;
+    }
+    for (var song in songsArtistMatched) {
+      uniqueMap[song.id] = song;
+    }
+
+    final allMatchesNoDuplicates = uniqueMap.values.toList();
+    _searchResult = value != null ? allMatchesNoDuplicates : null;
     setState(() {});
   }
 
