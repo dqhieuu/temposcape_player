@@ -194,6 +194,9 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                         _debounce = Timer(const Duration(milliseconds: 300),
                             _setListAccordingToText);
                       },
+                      decoration: InputDecoration(
+                        hintText: "Search online...",
+                      ),
                     ),
                   ],
                 ),
