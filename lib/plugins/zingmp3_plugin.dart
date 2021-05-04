@@ -16,7 +16,7 @@ import 'package:temposcape_player/plugins/player_plugins.dart';
 class ZingMp3Plugin extends BasePlayerPlugin {
   static const sha512SecretKey = r'882QcNXV4tUZbvAsjmFOHqNC1LpcBRKW';
   static const zingMp3ApiKey = r'kI44ARvPwaqL7v0KuDSM0rGORtdY1nnw';
-  static const version = '1.1.3';
+  static const version = '1.1.9';
 
   String cookie;
 
