@@ -102,7 +102,7 @@ class _SongTabState extends State<SongTab> {
     } finally {
       await refreshMediaStore(paths);
       // Wait for a while before refresh song list. This is necessary.
-      Timer(Duration(milliseconds: 100), () => setState(() {}));
+      Timer(Duration(milliseconds: 500), () => setState(() {}));
     }
   }
 

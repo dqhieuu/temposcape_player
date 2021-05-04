@@ -33,20 +33,27 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
       return;
     }
 
-    // Example: [Temposcape] Song name_1612315612.mp3
+    // Example: [Temposcape] Song name [123456789A].mp3
     final file = File(
         ('${await ExtStorage.getExternalStoragePublicDirectory(ExtStorage.DIRECTORY_MUSIC)}'
             '/[${Constants.appName}] '
             '${title?.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '-') ?? ''}'
-            '_${DateTime.now().millisecondsSinceEpoch}.mp3'));
+            ' ${checkSum != null ? '[$checkSum]' : ''}.mp3'));
 
     file.writeAsBytesSync((await http.get(url)).bodyBytes);
     await refreshMediaStore([file.path]);
-
+    setState(() {});
     showSnackBar(
       context,
       text: 'Successfully downloaded ${truncateText(title, 20)}.mp3.',
     );
+  }
+
+  Future<bool> _fileAlreadyExists(String checkSum) async {
+    final path = await ExtStorage.getExternalStoragePublicDirectory(
+        ExtStorage.DIRECTORY_MUSIC);
+    Directory dir = Directory(path);
+    return dir.listSync().any((file) => file.path.contains(checkSum));
   }
 
   @override
@@ -106,15 +113,30 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                   stream: AudioService.currentMediaItemStream,
                   builder: (context, snapshot) {
                     return (snapshot.data?.extras ?? {})['isOnline'] ?? false
-                        ? IconButton(
-                            // downloadable if online
-                            icon: Icon(Icons.download_rounded),
-                            onPressed: () async {
-                              final mediaItem = AudioService.currentMediaItem;
-                              await _downloadMusicToPhone(
-                                  context,
-                                  (mediaItem?.extras ?? {})['uri'],
-                                  mediaItem?.title);
+                        ? FutureBuilder<bool>(
+                            future: _fileAlreadyExists(
+                                (AudioService.currentMediaItem?.extras ??
+                                    {})['checkSum']),
+                            initialData: false,
+                            builder: (_, snapshot) {
+                              bool fileAlreadyDownloaded = snapshot.data;
+                              return IconButton(
+                                // downloadable if online
+                                icon: Icon(Icons.download_rounded),
+                                disabledColor: Colors.green.shade300,
+                                onPressed: fileAlreadyDownloaded
+                                    ? null
+                                    : () async {
+                                        final mediaItem =
+                                            AudioService.currentMediaItem;
+                                        await _downloadMusicToPhone(
+                                            context,
+                                            (mediaItem?.extras ?? {})['uri'],
+                                            mediaItem?.title,
+                                            checkSum: (mediaItem?.extras ??
+                                                {})['checkSum']);
+                                      },
+                              );
                             })
                         : FutureBuilder<List<PlaylistInfo>>(
                             // add to playlist-able if offline

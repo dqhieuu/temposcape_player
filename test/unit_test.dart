@@ -1,9 +1,10 @@
 // Import the test package and Counter class
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:temposcape_player/utils/duration_to_string.dart';
 import 'package:temposcape_player/utils/hashing.dart';
 
-void main() {
+void main() async {
   group('Song hashing', () {
     test('Null song null source', () {
       expect(hashOnlineSong(), 'DA39A3EE5E');

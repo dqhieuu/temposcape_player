@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:temposcape_player/plugins/plugins.dart';
+import 'package:temposcape_player/utils/hashing.dart';
 import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
 
@@ -209,7 +210,9 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                             onTap: () async {
                               if (_havingBlockingTask) return;
                               _havingBlockingTask = true;
+                              // Getting the song url may take long, so we need a flag to check if we're already requesting something.
                               final songUrl = await song.songUrl();
+                              // Disable the blocking flag
                               _havingBlockingTask = false;
                               if (songUrl == null || songUrl.isEmpty) return;
                               Navigator.push(
@@ -226,7 +229,14 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                                   extras: SongExtraInfo(
                                     isOnline: true,
                                     uri: songUrl,
-                                  ).toMap(),
+                                  ).toMap()
+                                    ..putIfAbsent(
+                                        // add checksum value
+                                        'checkSum',
+                                        () => hashOnlineSong(
+                                              id: song.id,
+                                              source: _currentPlugin.title,
+                                            )),
                                   artUri: song.albumArtUrl ??
                                       song.albumThumbnailUrl,
                                 ),
