@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:scrobblenaut/scrobblenaut.dart';
 import 'package:temposcape_player/models/artist_cache.dart';
 import 'package:temposcape_player/models/settings_model.dart';
+import 'package:temposcape_player/plugins/plugins.dart';
 import 'package:temposcape_player/screens/home_screen.dart';
 import 'package:temposcape_player/services/audio_player_task.dart';
 
@@ -26,10 +27,20 @@ void main() async {
   await Hive.openBox<ArtistCache>(ArtistCache.hiveBox);
 
   await Hive.openBox<String>(Constants.playlistNamesHiveBox);
+
+  final pluginStorage = <BasePlayerPlugin>[
+    ChiaSeNhacPlugin(),
+    ZingMp3Plugin(),
+    NhacCuaTuiPlugin(),
+    SoundCloudPlugin(),
+    OnlineRadiosPlugin(),
+  ];
+
   // Run main app
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => SettingsModel()),
+      Provider.value(value: pluginStorage),
     ],
     child: MyApp(),
   ));

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:temposcape_player/plugins/player_plugins.dart';
 
@@ -7,6 +8,7 @@ class OnlineRadiosPlugin extends BasePlayerPlugin {
           title: 'Online Radios',
           pluginTableInDatabase: 'pluginOnlineRadios',
           allowEmptySearch: true,
+          icon: Icon(Icons.radio),
         );
 
   @override

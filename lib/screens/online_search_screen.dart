@@ -4,7 +4,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:temposcape_player/plugins/online_radios_plugin.dart';
+import 'package:provider/provider.dart';
 import 'package:temposcape_player/plugins/plugins.dart';
 import 'package:temposcape_player/utils/utils.dart';
 import 'package:temposcape_player/widgets/widgets.dart';
@@ -68,17 +68,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   bool _hasReachedEnd = false;
   bool _havingBlockingTask = false;
 
-  final _plugins = <BasePlayerPlugin>[
-    ChiaSeNhacPlugin(),
-    ZingMp3Plugin(),
-    NhacCuaTuiPlugin(),
-    SoundCloudPlugin(),
-    OnlineRadiosPlugin(),
-  ];
-
-  _OnlineSearchScreenState() {
-    _currentPlugin = _plugins.first;
-  }
+  List<BasePlayerPlugin> _plugins;
 
   void _setList(List<OnlineSong> newList) {
     setState(() {
@@ -102,7 +92,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
     final thisSearchTimestamp = DateTime.now().millisecondsSinceEpoch;
     _lastSearchTimestamp = thisSearchTimestamp;
     _page = 1;
-
+    // Clear list if input is empty and plugin doesn't have a default list
     if (_searchValue.trim().isEmpty &&
         !(_currentPlugin != null && _currentPlugin.allowEmptySearch)) {
       _clearList();
@@ -126,6 +116,14 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
   @override
   void initState() {
     super.initState();
+    _plugins = context
+        .read<List<BasePlayerPlugin>>()
+        .where((plugin) => plugin.getValueFromDatabase<bool>('enabled') ?? true)
+        .toList();
+    _currentPlugin = _plugins.isNotEmpty ? _plugins.first : null;
+    // Show default plugin's list
+    _setListAccordingToText();
+
     _scrollController = new ScrollController();
     _scrollController.addListener(() async {
       if (_hasReachedEnd) return;

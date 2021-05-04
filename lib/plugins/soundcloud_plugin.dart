@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:temposcape_player/plugins/player_plugins.dart';
 
@@ -12,7 +13,11 @@ class SoundCloudPlugin extends BasePlayerPlugin {
   static const soundCloudClientId = r'SHBP59ZbnkOWhy3perfU0I83tRB8UuJk';
 
   SoundCloudPlugin()
-      : super(title: 'SoundCloud', pluginTableInDatabase: 'pluginSoundCloud');
+      : super(
+          title: 'SoundCloud',
+          pluginTableInDatabase: 'pluginSoundCloud',
+          icon: Icon(FontAwesomeIcons.soundcloud),
+        );
 
   @override
   Widget buildSettingsMenu() {

@@ -25,13 +25,13 @@ class SongQueueScreen extends StatelessWidget {
               title: Text('Song queue'),
               actions: [
                 IconButton(
-                    icon: Icon(
-                      Icons.cleaning_services,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      AudioService.updateQueue(<MediaItem>[]);
-                    })
+                  icon: Icon(Icons.cleaning_services),
+                  onPressed: queue?.isNotEmpty ?? false
+                      ? () {
+                          AudioService.updateQueue(<MediaItem>[]);
+                        }
+                      : null,
+                )
               ],
             ),
             body: StreamBuilder<MediaItem>(

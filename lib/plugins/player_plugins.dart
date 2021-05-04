@@ -50,7 +50,7 @@ abstract class BasePlayerPlugin {
   final String title;
   final String pluginTableInDatabase;
   final bool allowEmptySearch;
-  Image icon;
+  Widget icon;
 
   BasePlayerPlugin(
       {@required this.title,
@@ -64,8 +64,8 @@ abstract class BasePlayerPlugin {
     return Hive.box(pluginTableInDatabase).get(key);
   }
 
-  void putValueToDatabase<T>(String key, T value) {
-    Hive.box(pluginTableInDatabase).put(key, value);
+  Future<void> putValueToDatabase<T>(String key, T value) {
+    return Hive.box(pluginTableInDatabase).put(key, value);
   }
 
   Widget buildSettingsMenu();
