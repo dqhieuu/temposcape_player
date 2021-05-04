@@ -26,7 +26,8 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
   final audioQuery = FlutterAudioQuery();
 
   Future<void> _downloadMusicToPhone(
-      BuildContext context, String url, String title) async {
+      BuildContext context, String url, String title,
+      {String checkSum}) async {
     if (url == null || !url.startsWith('http')) {
       showSnackBar(context, text: 'Cannot download this song.');
       return;
@@ -80,11 +81,11 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                 children: <Widget>[
                   // Displayed on top if orientation = vertical,
                   // on the left side if horizontal
-                  buildLeftItemWidget(context, song),
+                  buildLeftSideWidget(context, song),
                   const SizedBox(height: 30, width: 10),
                   // Displayed at the bottom if orientation = vertical,
                   // on the right side if horizontal
-                  buildRightItemWidget(song, context, duration),
+                  buildRightSideWidget(song, context, duration),
                 ],
               ),
             );
@@ -92,7 +93,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
     );
   }
 
-  Widget buildRightItemWidget(
+  Widget buildRightSideWidget(
       MediaItem song, BuildContext context, Duration duration) {
     return Expanded(
       child: Column(
@@ -216,7 +217,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
     );
   }
 
-  Container buildLeftItemWidget(BuildContext context, MediaItem song) {
+  Container buildLeftSideWidget(BuildContext context, MediaItem song) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,

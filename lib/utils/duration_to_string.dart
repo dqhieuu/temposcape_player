@@ -14,14 +14,33 @@ String getFormattedDuration(Duration duration,
     case TimeFormat.optionalHours0Minutes0Seconds:
       if (duration == null) return '00:00';
       if (clockHours > 0) hours = '${clockHours.toString()}:';
-      minutes = '${clockMinutes < 10 ? '0' : ''}${clockMinutes.toString()}:';
-      seconds = '${clockSeconds < 10 ? '0' : ''}${clockSeconds.toString()}';
+      minutes = '${clockMinutes.toString().padLeft(2, '0')}:';
+      seconds = clockSeconds.toString().padLeft(2, '0');
       break;
     case TimeFormat.optionalHoursMinutes0Seconds:
       if (duration == null) return '0:00';
       if (clockHours > 0) hours = '${clockHours.toString()}:';
       minutes = '${clockMinutes.toString()}:';
-      seconds = '${clockSeconds < 10 ? '0' : ''}${clockSeconds.toString()}';
+      seconds = clockSeconds.toString().padLeft(2, '0');
+      break;
+    case TimeFormat.optionalHoursMinutesSeconds:
+      if (duration == null) return '0:0';
+      if (clockHours > 0) hours = '${clockHours.toString()}:';
+      minutes = '${clockMinutes.toString()}:';
+      seconds = clockSeconds.toString();
+      break;
+    case TimeFormat.zeroHours0Minutes0Seconds:
+      if (duration == null) return '00:00:00';
+      hours = '${clockHours.toString().padLeft(2, '0')}:';
+      minutes = '${clockMinutes.toString().padLeft(2, '0')}:';
+      seconds = clockSeconds.toString().padLeft(2, '0');
+      break;
+    case TimeFormat.hours0Minutes0Seconds:
+      if (duration == null) return '0:00:00';
+      hours = '${clockHours.toString()}:';
+      minutes = '${clockMinutes.toString().padLeft(2, '0')}:';
+      seconds = clockSeconds.toString().padLeft(2, '0');
+      break;
   }
 
   return '$hours$minutes$seconds';
@@ -37,4 +56,10 @@ String getFormattedDuration(Duration duration,
 /// * optional: quantity of unit isn't displayed if quantity = 0
 /// * {none}: quantity of unit is displayed as 0 if quantity = 0, otherwise {quantity}
 /// * 0 : pads an additional zero if quantity < 10
-enum TimeFormat { optionalHours0Minutes0Seconds, optionalHoursMinutes0Seconds }
+enum TimeFormat {
+  optionalHours0Minutes0Seconds,
+  optionalHoursMinutes0Seconds,
+  optionalHoursMinutesSeconds,
+  zeroHours0Minutes0Seconds,
+  hours0Minutes0Seconds
+}
