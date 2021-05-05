@@ -54,7 +54,10 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Add songs to playlist'),
+          title: Text(
+            'Add songs to playlist',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Text(
               'To add more songs to this playlist, please go to the "Songs" tab from the home screen.'),
           actions: [
@@ -187,6 +190,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                           isSelecting: _multiSelectController.isSelecting,
                           onSelected: () {
                             setState(() {
+                              showFirstTimeSelectionDialog(context);
                               _multiSelectController.toggle(index);
                             });
                           },

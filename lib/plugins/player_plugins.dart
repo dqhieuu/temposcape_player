@@ -60,8 +60,8 @@ abstract class BasePlayerPlugin {
     Hive.openBox(pluginTableInDatabase);
   }
 
-  T getValueFromDatabase<T>(String key) {
-    return Hive.box(pluginTableInDatabase).get(key);
+  T getValueFromDatabase<T>(String key, {T defaultValue}) {
+    return Hive.box(pluginTableInDatabase).get(key, defaultValue: defaultValue);
   }
 
   Future<void> putValueToDatabase<T>(String key, T value) {

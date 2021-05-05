@@ -151,7 +151,7 @@ class SongListTile extends StatelessWidget {
             if (draggable)
               Container(
                 child: Icon(
-                  Icons.drag_handle,
+                  Icons.drag_handle_rounded,
                   color: Theme.of(context).textTheme.bodyText1.color,
                   size: 36,
                 ),

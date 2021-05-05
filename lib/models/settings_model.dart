@@ -6,6 +6,12 @@ class SettingsModel extends ChangeNotifier {
 
   static final _box = Hive.box<dynamic>(hiveBox);
 
+  bool get hasSeenFirstTimeSelectionDialog =>
+      _box.get('firstTimeSelection', defaultValue: false);
+
+  void markFirstTimeSelectionDialogAsSeen() =>
+      _box.put('firstTimeSelection', true);
+
   bool get darkMode => _box.get('darkMode', defaultValue: false);
 
   void setDarkMode(bool enabled) async {

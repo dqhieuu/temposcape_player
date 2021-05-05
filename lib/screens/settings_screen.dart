@@ -52,8 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: plugin.title,
                         leading: plugin.icon ?? Icon(Icons.album_rounded),
                         switchValue:
-                            plugin.getValueFromDatabase<bool>('enabled') ??
-                                true,
+                            plugin.getValueFromDatabase<bool>('enabled', defaultValue: true),
                         onToggle: (bool value) async {
                           await plugin.putValueToDatabase<bool>(
                               'enabled', value);

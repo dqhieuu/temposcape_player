@@ -40,7 +40,10 @@ class _PlaylistTabState extends State<PlaylistTab> {
       builder: (context) {
         final myController = TextEditingController();
         return AlertDialog(
-          title: Text('Add playlist'),
+          title: Text(
+            'Add playlist',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: TextField(
             controller: myController,
             decoration: InputDecoration(
@@ -75,7 +78,10 @@ class _PlaylistTabState extends State<PlaylistTab> {
       builder: (context) {
         final myController = TextEditingController();
         return AlertDialog(
-          title: Text('Rename playlist'),
+          title: Text(
+            'Rename playlist',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: TextField(
             controller: myController,
             decoration: InputDecoration(
@@ -129,6 +135,7 @@ class _PlaylistTabState extends State<PlaylistTab> {
 
   void updateParentAppBar() {
     if (_multiSelectController.selectedIndexes.isNotEmpty) {
+      showFirstTimeSelectionDialog(context);
       widget.tabAppBarCallback(AppBar(
         leading: IconButton(
           icon: Icon(Icons.close),

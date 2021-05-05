@@ -119,7 +119,8 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
     super.initState();
     _plugins = context
         .read<List<BasePlayerPlugin>>()
-        .where((plugin) => plugin.getValueFromDatabase<bool>('enabled') ?? true)
+        .where((plugin) =>
+            plugin.getValueFromDatabase<bool>('enabled', defaultValue: true))
         .toList();
     _currentPlugin = _plugins.isNotEmpty ? _plugins.first : null;
     // Show default plugin's list

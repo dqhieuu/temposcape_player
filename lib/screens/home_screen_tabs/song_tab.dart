@@ -61,9 +61,27 @@ class _SongTabState extends State<SongTab> {
             .map((index) => _songs[index])
             .toList();
         return AlertDialog(
-          title: Text('Delete songs'),
-          content: Text(
-              'You\'re about to delete ${selectedSongs.length} songs from your device. This is permanent and can\'t be undone. Do you still want to proceed?'),
+          title: Text(
+            'Delete songs',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: RichText(
+            text: TextSpan(
+              style: Theme.of(context).textTheme.subtitle1,
+              children: <TextSpan>[
+                TextSpan(text: 'You\'re about to delete '),
+                TextSpan(
+                  text: '${selectedSongs.length} songs',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextSpan(
+                    text:
+                        ' from your device. This is permanent and can\'t be undone. Do you still want to proceed?'),
+              ],
+            ),
+          ),
+          // content: Text(
+          //     'You\'re about to delete ${selectedSongs.length} songs from your device. This is permanent and can\'t be undone. Do you still want to proceed?'),
           actions: [
             FlatButton(
               onPressed: () async {
@@ -179,6 +197,7 @@ class _SongTabState extends State<SongTab> {
 
   void updateParentAppBar() {
     if (_multiSelectController.selectedIndexes.isNotEmpty) {
+      showFirstTimeSelectionDialog(context);
       widget.tabAppBarCallback(AppBar(
         leading: IconButton(
           icon: Icon(Icons.close),

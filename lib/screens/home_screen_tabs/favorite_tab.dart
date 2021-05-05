@@ -66,6 +66,7 @@ class _FavoriteTabState extends State<FavoriteTab> {
 
   void updateParentAppBar() {
     if (_multiSelectController.selectedIndexes.isNotEmpty) {
+      showFirstTimeSelectionDialog(context);
       widget.tabAppBarCallback(AppBar(
         leading: IconButton(
           icon: Icon(Icons.close),
