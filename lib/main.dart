@@ -67,11 +67,9 @@ class _MyAppState extends State<MyApp> {
           title: Constants.appName,
           theme: currentTheme.copyWith(
             textTheme: GoogleFonts.montserratTextTheme(currentTheme.textTheme),
-            appBarTheme: AppBarTheme(
-              textTheme: TextTheme().apply(
-                fontFamily: GoogleFonts.montserrat().fontFamily,
-              ),
-            ),
+            primaryTextTheme:
+                GoogleFonts.montserratTextTheme(currentTheme.textTheme)
+                    .apply(bodyColor: Colors.white),
           ),
           // localizationsDelegates: [
           //   S.delegate,
