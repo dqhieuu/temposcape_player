@@ -85,6 +85,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                     MediaQuery.of(context).orientation == Orientation.portrait
                         ? Axis.vertical
                         : Axis.horizontal,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   // Displayed on top if orientation = vertical,
                   // on the left side if horizontal
@@ -104,7 +105,8 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
       MediaItem song, BuildContext context, Duration duration) {
     return Expanded(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.max,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -234,6 +236,9 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                 );
               }),
           PlayerControlBar(),
+          const SizedBox(
+            height: 40,
+          )
         ],
       ),
     );
@@ -246,7 +251,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).textTheme.bodyText1.color.withOpacity(0.3),
-            spreadRadius: 5,
+            spreadRadius: 3,
             blurRadius: 12,
             offset: Offset(0, 0), // changes position of shadow
           ),
