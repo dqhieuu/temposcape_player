@@ -15,6 +15,14 @@ class AudioPlayerTask extends BackgroundAudioTask {
   ConcatenatingAudioSource _audioSource;
   var _queue = <MediaItem>[];
 
+  // setState() resets shuffleMode and repeatMode if these
+  // parameters are left null, that's why we need to keep their current state
+  Future<void> _updatePosition() => AudioServiceBackground.setState(
+        position: _player.position ?? Duration.zero,
+        shuffleMode: _shuffleMode,
+        repeatMode: _repeatMode,
+      );
+
   @override
   Future<void> onPlay() => _player.play();
 
@@ -22,7 +30,10 @@ class AudioPlayerTask extends BackgroundAudioTask {
   Future<void> onPause() => _player.pause();
 
   @override
-  Future<void> onSeekTo(Duration duration) => _player.seek(duration);
+  Future<void> onSeekTo(Duration duration) async {
+    await _player.seek(duration);
+    return _updatePosition();
+  }
 
   @override
   Future<void> onSkipToQueueItem(String mediaId) {
@@ -158,12 +169,20 @@ class AudioPlayerTask extends BackgroundAudioTask {
 
   @override
   Future<void> onStart(Map<String, dynamic> params) async {
+    _player.playbackEventStream.listen((stream) async {
+      if (stream.updatePosition < Duration(milliseconds: 100)) {
+        // Update position because it may be in a loop
+        _updatePosition();
+      }
+    });
+
     // Listen to state changes on the player...
-    _player.playerStateStream.listen((playerState) {
+    _player.playerStateStream.listen((playerState) async {
       // Seek to the beginning of file and pause the player when reaching end of queue
       if (playerState.processingState == ProcessingState.completed) {
         _player.pause();
-        _player.seek(Duration.zero);
+        await _player.seek(Duration.zero);
+        _updatePosition();
       }
       // ... and forward them to all audio_service clients.
       AudioServiceBackground.setState(
@@ -191,6 +210,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
     _player.currentIndexStream.listen((index) {
       if (index == null || index < 0 || _queue.isEmpty) return null;
       AudioServiceBackground.setMediaItem(_queue[index]);
+      _updatePosition();
     });
 
     // This sets the duration of the audio file to player's duration
@@ -204,16 +224,6 @@ class AudioPlayerTask extends BackgroundAudioTask {
         await AudioServiceBackground.setQueue([modifiedMedia]);
         AudioServiceBackground.setMediaItem(modifiedMedia);
       }
-    });
-
-    _player.positionStream.listen((position) {
-      // setState() resets shuffleMode and repeatMode if these
-      // parameters are left null, that's why we need to keep their current state
-      AudioServiceBackground.setState(
-        position: position,
-        shuffleMode: _shuffleMode,
-        repeatMode: _repeatMode,
-      );
     });
   }
 }
