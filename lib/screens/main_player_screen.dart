@@ -105,6 +105,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
     return Expanded(
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -188,7 +189,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                   MyMarquee(
                     song?.title ?? 'No song played',
                     alignment: Alignment.center,
-                    width: 250,
+                    width: 220,
                     height: 35,
                     fontSize: 24,
                     style: TextStyle(
@@ -198,7 +199,7 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
                   MyMarquee(
                     song?.artist ?? 'Source not found',
                     alignment: Alignment.center,
-                    width: 250,
+                    width: 220,
                     height: 25,
                     fontSize: 16,
                     style: TextStyle(
@@ -239,26 +240,29 @@ class _MainPlayerScreenState extends State<MainPlayerScreen> {
     );
   }
 
-  Container buildLeftSideWidget(BuildContext context, MediaItem song) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).textTheme.bodyText1.color.withOpacity(0.3),
-            spreadRadius: 5,
-            blurRadius: 12,
-            offset: Offset(0, 0), // changes position of shadow
-          ),
-        ],
-      ),
-      child: CircleAvatar(
-        backgroundImage: (song?.artUri != null
-            ? ((song?.extras ?? {})['isOnline'] ?? false
-                ? CachedNetworkImageProvider(song.artUri)
-                : Image.file(File(Uri.parse(song.artUri).path)).image)
-            : AssetImage(Constants.defaultImagePath)),
-        radius: 140,
+  Widget buildLeftSideWidget(BuildContext context, MediaItem song) {
+    return Expanded(
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color:
+                  Theme.of(context).textTheme.bodyText1.color.withOpacity(0.3),
+              spreadRadius: 5,
+              blurRadius: 12,
+              offset: Offset(0, 0), // changes position of shadow
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          backgroundImage: (song?.artUri != null
+              ? ((song?.extras ?? {})['isOnline'] ?? false
+                  ? CachedNetworkImageProvider(song.artUri)
+                  : Image.file(File(Uri.parse(song.artUri).path)).image)
+              : AssetImage(Constants.defaultImagePath)),
+          radius: double.infinity,
+        ),
       ),
     );
   }

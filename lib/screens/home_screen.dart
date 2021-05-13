@@ -457,7 +457,7 @@ class MiniPlayer extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           MyMarquee(
-                            song?.title ?? 'No song selected',
+                            song?.title ?? 'No song played',
                             height: 28,
                             fontSize: 18,
                             style: TextStyle(
