@@ -89,7 +89,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
     });
   }
 
-  Future<void> _setListAccordingToText() async {
+  Future<void> _setListAccordingToQuery() async {
     final thisSearchTimestamp = DateTime.now().millisecondsSinceEpoch;
     _lastSearchTimestamp = thisSearchTimestamp;
     _page = 1;
@@ -105,6 +105,15 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
         return;
       }
       _setList(songData);
+
+      Future.doWhile(() async {
+        if (_scrollController.position.maxScrollExtent > 0 || _hasReachedEnd)
+          return false;
+        // Device screen is big, we need to search more to fill the list for the controller to work
+        await _addNextPageToList();
+        return !_hasReachedEnd;
+      });
+
       // Scroll to top on new search
       _scrollController.animateTo(
         _scrollController.position.minScrollExtent,
@@ -112,6 +121,20 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
         curve: Curves.easeIn,
       );
     }
+  }
+
+  Future<void> _addNextPageToList() async {
+    _page++;
+    final newPage = await _currentPlugin.searchSong(
+      _searchValue,
+      page: _page,
+    );
+
+    if (newPage == null || newPage.isEmpty) {
+      _hasReachedEnd = true;
+      return;
+    }
+    _addToList(newPage);
   }
 
   @override
@@ -124,7 +147,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
         .toList();
     _currentPlugin = _plugins.isNotEmpty ? _plugins.first : null;
     // Show default plugin's list
-    _setListAccordingToText();
+    _setListAccordingToQuery();
 
     _scrollController = new ScrollController();
     _scrollController.addListener(() async {
@@ -135,17 +158,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
       const delta = 50.0;
 
       if (maxScroll - currentScroll <= delta) {
-        _page++;
-        final newPage = await _currentPlugin.searchSong(
-          _searchValue,
-          page: _page,
-        );
-
-        if (newPage == null || newPage.isEmpty) {
-          _hasReachedEnd = true;
-          return;
-        }
-        _addToList(newPage);
+        _addNextPageToList();
       }
     });
   }
@@ -182,7 +195,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                       onChanged: (BasePlayerPlugin selectedPlugin) {
                         setState(() {
                           _currentPlugin = selectedPlugin;
-                          _setListAccordingToText();
+                          _setListAccordingToQuery();
                         });
                       },
                       value: _currentPlugin,
@@ -192,7 +205,7 @@ class _OnlineSearchScreenState extends State<OnlineSearchScreen> {
                         _searchValue = value;
                         if (_debounce?.isActive ?? false) _debounce.cancel();
                         _debounce = Timer(const Duration(milliseconds: 300),
-                            _setListAccordingToText);
+                            _setListAccordingToQuery);
                       },
                       decoration: InputDecoration(
                         hintText: "Search online...",
