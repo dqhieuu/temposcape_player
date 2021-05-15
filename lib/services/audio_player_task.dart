@@ -170,7 +170,8 @@ class AudioPlayerTask extends BackgroundAudioTask {
   @override
   Future<void> onStart(Map<String, dynamic> params) async {
     _player.playbackEventStream.listen((stream) async {
-      if (stream.updatePosition < Duration(milliseconds: 100)) {
+      if ((stream.updatePosition != null) &&
+          stream.updatePosition < Duration(milliseconds: 100)) {
         // Update position because it may be in a loop
         _updatePosition();
       }
