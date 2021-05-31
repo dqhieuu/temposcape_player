@@ -1,6 +1,7 @@
 # Temposcape player
-![example workflow](https://github.com/dqhieuu/temposcape_player/actions/workflows/flutter_android.yml/badge.svg)
 A music player written in Flutter.
+
+![example workflow](https://github.com/dqhieuu/temposcape_player/actions/workflows/flutter_android.yml/badge.svg)
 
 ## Usage
 First generate the .g files for i18n files:
