@@ -253,40 +253,44 @@ class _ArtistScreenState extends State<ArtistScreen> {
       child: ListView(
           scrollDirection: Axis.horizontal,
           children: albums
-                  ?.map((album) => GestureDetector(
-                        child: Container(
-                          width: 100,
-                          child: Column(
-                            children: [
-                              AspectRatio(
-                                aspectRatio: 1,
-                                child: RoundedImage(
-                                  image: album.albumArt != null
-                                      ? Image.file(File(album.albumArt)).image
-                                      : AssetImage(Constants.defaultAlbumPath),
-                                  borderRadius: BorderRadius.circular(10),
+                  ?.map((album) => Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: GestureDetector(
+                          child: Container(
+                            width: 100,
+                            child: Column(
+                              children: [
+                                AspectRatio(
+                                  aspectRatio: 1,
+                                  child: RoundedImage(
+                                    image: album.albumArt != null
+                                        ? Image.file(File(album.albumArt)).image
+                                        : AssetImage(
+                                            Constants.defaultAlbumPath),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                album.title,
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            ],
+                                Text(
+                                  album.title,
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              ],
+                            ),
                           ),
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => AlbumScreen(
+                                          albumInput: album,
+                                        )));
+                          },
                         ),
-                        onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => AlbumScreen(
-                                        albumInput: album,
-                                      )));
-                        },
                       ))
                   ?.toList() ??
               []),
