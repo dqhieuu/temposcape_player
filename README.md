@@ -1,9 +1,10 @@
 # Temposcape player
 
-
-<img src="docs/screenshots/songs_tab.png" width="250"/>
-<img src="docs/screenshots/artist_screen.png" width="250"/>
-<img src="docs/screenshots/main_player.png" width="250"/>
+<p float="left">
+    <img src="docs/screenshots/songs_tab.png" width="250"/>
+    <img src="docs/screenshots/artist_screen.png" width="250"/>
+    <img src="docs/screenshots/main_player.png" width="250"/>
+</p>
 
 [View all screenshots](docs/screenshots.md)
 
