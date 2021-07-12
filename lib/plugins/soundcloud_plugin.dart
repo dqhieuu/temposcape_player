@@ -10,7 +10,7 @@ import 'package:temposcape_player/plugins/player_plugins.dart';
 /// for figuring out how to use this internal API.
 /// https://github.com/ytdl-org/youtube-dl/blob/master/youtube_dl/extractor/soundcloud.py
 class SoundCloudPlugin extends BasePlayerPlugin {
-  static const soundCloudClientId = r'vFImNkLVyrDxqzOjhw0lL0ZPUsf4KfEo';
+  static const soundCloudClientId = r'5etCuW8mXGyaCVREPjFr5SQ1wX1RTuX0';
 
   SoundCloudPlugin()
       : super(
